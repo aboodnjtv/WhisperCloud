@@ -5,6 +5,10 @@ const path = require('path');
 const ejsMate = require("ejs-mate");
 const User = require("./models/user");
 
+const session = require("express-session") 
+const MongoStore = require("connect-mongo")
+
+require("./config/db");
 
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
@@ -14,12 +18,23 @@ app.set("views",path.join(__dirname,"../frontend/views"));
 app.use(express.static("../frontend/public"));
 app.use(express.urlencoded({ extended: true }));
 
-require("./config/db");
-
+app.use(session({
+    secret: "NUIKzAgaj0",
+    resave: false,
+    saveUninitialized: true,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        collectionName: "sessions"
+    }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 2
+    }
+}))
 
 // import routes
 // user routes 
 const userRoutes = require("./routes/userRoutes");
+
 app.use("/", userRoutes);
 
 
