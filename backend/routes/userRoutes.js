@@ -10,64 +10,35 @@ router.get("/login",(req,res)=>{
     });
 })
 
-router.post("/signin", async(req, res) => {
+router.post("/login", async(req, res) => {
     try {
         const {email, password} = req.body
         const foundUser = await User.findOne({email});
-
-        
-    
         if(!foundUser) return res.redirect("/login");
         const result = await bcrypt.compare(password, foundUser.password)
         if(!result) return res.redirect("/login");
-        
-
-        console.log("------------------------")
-        console.log("result: "+result)
-        console.log("------------------------")
+        req.session.user = foundUser;
         res.redirect("/homepage")
-        
-
-        // Check if user's email is present in the database
-        if (userData.length != 0) {
-            const userEmail = userData[0].email
-            const userPassword = userData[0].password
-            const userName = userData[0].name
-
-            // Check if the passwords match
-            bcrypt.compare(password, userPassword, (err, data) => {
-                if (err) throw err
-
-                if (data) {
-                    req.session.email = userEmail
-                    req.session.name = userName
-                    res.redirect("/homepage")
-                } else {
-                    return res.status(401).json({msg: "The inputted password did not match the account holder's password. Please try again."})
-                }
-            })
-        } else {
-            return res.status(401).json({msg: "The inputted email address was not found in our system. Please try again or sign up for an account if you haven't already."})
-        }
     } catch (error) {
         console.log(error)
     }
 
 })
 
-let secureLogin = (req, res, next) => {
-    if (!req.session.email || !req.session.name) return res.redirect("/login")
+const requireLogin = (req, res, next) => {
+    if (!req.session.user) return res.redirect("/login")
     next()
 }
 
-router.get("/homepage", secureLogin, (req, res) => {
+router.get("/homepage", requireLogin, (req, res) => {
     res.render("./user/homepage", {
-        title: "Homepage | WhisperCloud"
+        title: "Homepage | WhisperCloud",
+        user:req.session.user
     })
 })
 
 // Destroy session
-router.get("/logout", (req, res) => {
+router.post("/logout", (req, res) => {
     req.session.destroy();
     res.redirect("/login")
 })
