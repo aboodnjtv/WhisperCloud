@@ -18,18 +18,7 @@ app.set("views",path.join(__dirname,"../frontend/views"));
 app.use(express.static("../frontend/public"));
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-    secret: "NUIKzAgaj0",
-    resave: false,
-    saveUninitialized: true,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI,
-        collectionName: "sessions"
-    }),
-    cookie: {
-        maxAge: 1000 * 60 * 60 * 2
-    }
-}))
+app.use(session({ secret: process.env.SESSION_SECRET }));
 
 // import routes
 // user routes 
