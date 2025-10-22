@@ -13,7 +13,20 @@ router.get("/login",(req,res)=>{
 router.post("/signin", async(req, res) => {
     try {
         const {email, password} = req.body
-        const userData = await User.find({email: {$eq: email}})
+        const foundUser = await User.findOne({email});
+
+        
+    
+        if(!foundUser) return res.redirect("/login");
+        const result = await bcrypt.compare(password, foundUser.password)
+        if(!result) return res.redirect("/login");
+        
+
+        console.log("------------------------")
+        console.log("result: "+result)
+        console.log("------------------------")
+        res.redirect("/homepage")
+        
 
         // Check if user's email is present in the database
         if (userData.length != 0) {
