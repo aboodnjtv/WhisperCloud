@@ -1,0 +1,69 @@
+<% layout('layout/boilerplate') %>
+
+<link rel="stylesheet" href="/css/pages.css">
+
+<div class="pages-container">
+  <div class="header">
+    <h1>📚 Available Pages</h1>
+    <p class="subtitle">Subscribe to pages to receive API updates</p>
+    <a href="/homepage" class="back-btn">← Back to Home</a>
+  </div>
+
+  <% if (pages && pages.length > 0) { %>
+    <div class="pages-grid">
+      <% pages.forEach(page => { 
+        const isSubscribed = user.subscribedPages.some(
+          subPage => subPage.toString() === page._id.toString()
+        );
+      %>
+        <div class="page-card <%= isSubscribed ? 'subscribed' : '' %>">
+          <div class="page-header">
+            <h3><%= page.name %></h3>
+            <% if (isSubscribed) { %>
+              <span class="subscribed-badge">✓ Subscribed</span>
+            <% } %>
+          </div>
+          
+          <% if (page.description) { %>
+            <p class="page-description"><%= page.description %></p>
+          <% } %>
+          
+          <div class="page-details">
+            <div class="detail-item">
+              <span class="detail-label">API Source:</span>
+              <span class="detail-value api-url"><%= page.apiUrl %></span>
+            </div>
+            
+            <% if (page.message && page.message.content) { %>
+              <div class="latest-message">
+                <span class="detail-label">Latest Update:</span>
+                <p class="message-preview"><%= page.message.content.substring(0, 100) %><%= page.message.content.length > 100 ? '...' : '' %></p>
+                <span class="message-time">
+                  <%= new Date(page.message.timestamp).toLocaleDateString() %>
+                </span>
+              </div>
+            <% } %>
+          </div>
+          
+          <div class="page-actions">
+            <% if (isSubscribed) { %>
+              <form method="POST" action="/unsubscribe/<%= page._id %>">
+                <button type="submit" class="unsubscribe-btn">Unsubscribe</button>
+              </form>
+            <% } else { %>
+              <form method="POST" action="/subscribe/<%= page._id %>">
+                <button type="submit" class="subscribe-btn">Subscribe</button>
+              </form>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No Pages Available</h3>
+      <p>There are currently no pages configured. Check back later!</p>
+    </div>
+  <% } %>
+</div>

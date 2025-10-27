@@ -15,7 +15,7 @@
   font-family: "Inter", sans-serif;
 }
 
-body {
+body.auth-page {
   background: var(--bg-gradient);
   min-height: 100vh;
   display: flex;
