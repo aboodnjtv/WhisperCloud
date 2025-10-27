@@ -44,11 +44,18 @@ const port = 3000;
 app.get("/",(req,res)=>{
     res.render("./index");
 })
-app.get("/db",async(req,res)=>{
-    const users = await User.find({});
-    res.render("./admin/db",{title:"DB | WhisperCloud",users});
-})
+app.get("/db", async (req, res) => {
+  const admins = await User.find({ type: "admin" });
+  const peers = await User.find({ type: "peer" });
 
+  res.render("./admin/db", {
+    title: "DB | WhisperCloud",
+    admins,
+    peers,
+    adminCount: admins.length,
+    peerCount: peers.length
+  });
+});
 
 app.use((req,res)=>{
     res.send("Page Not Found!")
