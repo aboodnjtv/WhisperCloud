@@ -37,6 +37,8 @@ const userSchema = new mongoose.Schema({
   lastSeen: { type: Date, default: Date.now },
   isOnline: { type: Boolean, default: false },
   isLeader: { type: Boolean, default: false }, // global leader flag
+  leaderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // the id of the admin
+
 
 
 

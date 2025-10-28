@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
-
+const requireLogin = require("../middleware/requireLogin");
 
 router.get("/login",(req,res)=>{
     res.render("./user/login",{
@@ -24,11 +24,6 @@ router.post("/login", async(req, res) => {
     }
 
 })
-
-const requireLogin = (req, res, next) => {
-    if (!req.session.user) return res.redirect("/login")
-    next()
-}
 
 router.get("/homepage", requireLogin, (req, res) => {
     res.render("./user/homepage", {
@@ -67,5 +62,7 @@ router.post("/signup",async(req,res)=>{
     res.redirect("/");
 
 })
+
+
 
 module.exports = router;

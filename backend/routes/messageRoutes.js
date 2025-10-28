@@ -2,12 +2,8 @@ const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
 const Page = require("../models/page");
+const requireLogin = require("../middleware/requireLogin");
 
-// Middleware to require login
-const requireLogin = (req, res, next) => {
-    if (!req.session.user) return res.redirect("/login");
-    next();
-};
 
 // Route to display admin broadcast messages
 router.get("/admin-messages", requireLogin, async (req, res) => {

@@ -4,9 +4,8 @@ const app = express();
 const path = require('path');
 const ejsMate = require("ejs-mate");
 const User = require("./models/user");
-
 const session = require("express-session") 
-const MongoStore = require("connect-mongo")
+
 
 require("./config/db");
 
@@ -17,25 +16,27 @@ app.set("views",path.join(__dirname,"../frontend/views"));
 
 app.use(express.static("../frontend/public"));
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI
-    }),
-    cookie: {
-        maxAge: 1000 * 60 * 60 * 2
-    }
+    secret: process.env.SESSION_SECRET
 }));
+
+
+app.use((req, res, next) => {
+  res.locals.user = req.session.user || null;
+  next();
+});
+
 
 // import routes
 // user routes 
 const userRoutes = require("./routes/userRoutes");
+const leaderElectionRoutes = require("./routes/leaderElectionRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 
 app.use("/", userRoutes);
+app.use("/", leaderElectionRoutes);
 app.use("/", messageRoutes);
 
 
