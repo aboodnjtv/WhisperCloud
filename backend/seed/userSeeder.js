@@ -1,0 +1,70 @@
+require('dotenv').config({ path: '../.env' });
+const User = require("../models/user");
+require("../config/db");
+const bcrypt = require("bcrypt");
+
+
+const seedUsers = async () => {
+  try {
+    // Clear existing users
+    await User.deleteMany({});
+    console.log("Cleared existing users");
+
+    // Common password
+    const hashedPassword = await bcrypt.hash("123456", 12);
+
+    const users = [];
+
+    // --- Create 3 Admins ---
+    for (let i = 1; i <= 3; i++) {
+      users.push({
+        name: `Admin_${i}`,
+        email: `admin${i}@whispercloud.com`,
+        password: hashedPassword,
+        type: "admin",
+        isLeader: false,
+        isOnline: true,
+        bcastId: String(100 + i),
+      });
+    }
+
+    // --- Create 9 Peers ---
+    for (let i = 1; i <= 9; i++) {
+      users.push({
+        name: `Peer_${i}`,
+        email: `peer${i}@whispercloud.com`,
+        password: hashedPassword,
+        type: "peer",
+        isLeader: false,
+        isOnline: true,
+        bcastId: String(i),
+      });
+    }
+
+    // Insert all users
+    const insertedUsers = await User.insertMany(users);
+    console.log("Inserted users into DB");
+
+    // --- Assign whisId and randomly choose a leader peer ---
+    const peerUsers = insertedUsers.filter(u => u.type === "peer");
+    const randomLeader = peerUsers[Math.floor(Math.random() * peerUsers.length)];
+
+    for (const user of insertedUsers) {
+      user.whisId = user._id.toString();
+      if (user._id.equals(randomLeader._id)) {
+        user.isLeader = true;
+      }
+      await user.save();
+    }
+
+    console.log(`Assigned leader: ${randomLeader.name}`);
+    console.log("Seeding complete!");
+
+    process.exit(0);
+  } catch (err) {
+    console.error("Error seeding users:", err);
+    process.exit(1);
+  }
+};
+
+seedUsers();
