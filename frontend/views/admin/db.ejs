@@ -1,20 +1,55 @@
-<%layout("layout/boilerplate")%>
+<% layout("layout/boilerplate") %>
+
 <h1>All Whisperers</h1>
 
+<div class="counts-container">
+  <div class="count-card admin-count">
+    <span class="count-number"><%= adminCount %></span>
+    <span class="count-label">Admins</span>
+  </div>
+  <div class="count-card peer-count">
+    <span class="count-number"><%= peerCount %></span>
+    <span class="count-label">Peers</span>
+  </div>
+</div>
+
+
 <div class="table-container">
-  <% if (users && users.length > 0) { %>
+  <% if ((admins && admins.length > 0) || (peers && peers.length > 0)) { %>
     <table>
       <thead>
         <tr>
           <th>Name</th>
           <th>Email</th>
+          <th>bcastId</th>
+          <th>whisId</th>
+          <th>Type</th>
+          <th>Last Seen</th>
+          <th>isLeader</th>
         </tr>
       </thead>
       <tbody>
-        <% users.forEach(user => { %>
+        <% admins.forEach(user => { %>
+          <tr class="admin-row">
+            <td><%= user.name %></td>
+            <td><%= user.email %></td>
+            <td><%= user.bcastId %></td>
+            <td><%= user.whisId %></td>
+            <td class="admin"><%= user.type %></td>
+            <td><%= Math.round((Date.now() - user.lastSeen)/1000) %> seconds ago</td>
+            <td class="<%= user.isLeader ? 'leader' : '' %>"><%= user.isLeader %></td>
+          </tr>
+        <% }) %>
+
+        <% peers.forEach(user => { %>
           <tr>
             <td><%= user.name %></td>
             <td><%= user.email %></td>
+            <td><%= user.bcastId %></td>
+            <td><%= user.whisId %></td>
+            <td class="peer"><%= user.type %></td>
+            <td><%= Math.round((Date.now() - user.lastSeen)/1000) %> seconds ago</td>
+            <td class="<%= user.isLeader ? 'leader' : '' %>"><%= user.isLeader %></td>
           </tr>
         <% }) %>
       </tbody>
