@@ -6,6 +6,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/db.css">
+    <script>
+        window.user = <%- user ? JSON.stringify(user) : "null" %>;
+    </script>
+    <script src="/js/update-last-seen.js"></script>
+    <script src="/js/check-leader.js"></script>
+
+
     <title>
       
         <%= typeof title !== "undefined" ? title : "WhisperCloud" %>
