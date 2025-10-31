@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   },
 
    // Message identifiers for tracking
-  bcastId: { type: Number, default: null }, //used for broadcast
+  bcastId:{ type: Number, default: null }, //used for broadcast
   whisId: { type: String, default: null }, // used for gossip / leader election (same as _id)
 
   // Node role in the system
