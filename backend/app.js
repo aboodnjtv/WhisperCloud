@@ -6,7 +6,6 @@ const ejsMate = require("ejs-mate");
 const User = require("./models/user");
 const session = require("express-session") 
 
-
 require("./config/db");
 
 app.engine('ejs', ejsMate);
@@ -19,7 +18,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(session({
-    secret: process.env.SESSION_SECRET
+    secret: process.env.SESSION_SECRET,
 }));
 
 
