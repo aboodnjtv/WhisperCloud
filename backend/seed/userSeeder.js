@@ -24,7 +24,7 @@ const seedUsers = async () => {
         type: "admin",
         isLeader: false,
         isOnline: true,
-        bcastId: String(100 + i),
+        bcastId: Number(100 + i),
       });
     }
 
@@ -37,7 +37,7 @@ const seedUsers = async () => {
         type: "peer",
         isLeader: false,
         isOnline: true,
-        bcastId: String(i),
+        bcastId: Number(i),
       });
     }
 
