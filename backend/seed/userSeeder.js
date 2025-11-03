@@ -11,7 +11,7 @@ const seedUsers = async () => {
     console.log("Cleared existing users");
 
     // Common password
-    const hashedPassword = await bcrypt.hash("123456", 12);
+    const hashedPassword = await bcrypt.hash("a", 12);
 
     const users = [];
 
