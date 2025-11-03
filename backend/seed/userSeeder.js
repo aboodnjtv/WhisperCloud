@@ -51,6 +51,7 @@ const seedUsers = async () => {
 
     for (const user of insertedUsers) {
       user.whisId = user._id.toString();
+      user.leaderId = randomLeader._id;
       if (user._id.equals(randomLeader._id)) {
         user.isLeader = true;
       }
