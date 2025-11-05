@@ -31,11 +31,11 @@ app.use((req, res, next) => {
 // import routes
 // user routes 
 const userRoutes = require("./routes/userRoutes");
-const leaderElectionRoutes = require("./routes/leaderElectionRoutes");
+const leaderPingRoutes = require("./routes/leaderPingRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 
 app.use("/", userRoutes);
-app.use("/", leaderElectionRoutes);
+app.use("/", leaderPingRoutes);
 app.use("/", messageRoutes);
 
 
