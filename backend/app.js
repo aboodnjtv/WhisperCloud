@@ -33,10 +33,12 @@ app.use((req, res, next) => {
 const userRoutes = require("./routes/userRoutes");
 const leaderPingRoutes = require("./routes/leaderPingRoutes");
 const messageRoutes = require("./routes/messageRoutes");
+const pageRoutes = require("./routes/pageRoutes");
 
 app.use("/", userRoutes);
 app.use("/", leaderPingRoutes);
 app.use("/", messageRoutes);
+app.use("/", pageRoutes);
 
 
 const port = 3000;

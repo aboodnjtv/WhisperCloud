@@ -1,114 +1,93 @@
+// a rotue to update users last-seen to current time
 const express = require("express");
 const router = express.Router();
 const User = require("../models/user");
-const Page = require("../models/page");
+const Message = require("../models/message");
 const requireLogin = require("../middleware/requireLogin");
 
+// a route to ping leader
+// it sends a messages to the leader to ask for its last-seen
+router.post("/send", requireLogin, async (req, res) => {
+  try {
+    const { type,senderId,receiverId,payload,status,timestamp } = req.body;
+    const message = new Message({
+      type,
+      senderId,
+      receiverId,
+      payload,
+      status,
+      timestamp
+    })
+    await message.save();
+    return res.status(200).json({ success: true});
 
-// Route to display admin broadcast messages
-router.get("/admin-messages", requireLogin, async (req, res) => {
-    try {
-        // Get the current user with full data
-        const user = await User.findById(req.session.user._id);
-        
-        if (!user) {
-            return res.redirect("/login");
-        }
-
-        // Filter messages that don't have a page reference (admin broadcasts)
-        const adminMessages = user.messages.filter(msg => !msg.page);
-
-        res.render("./user/admin-messages", {
-            title: "Admin Messages | WhisperCloud",
-            user: user,
-            adminMessages: adminMessages
-        });
-    } catch (error) {
-        console.log("Error fetching admin messages:", error);
-        res.redirect("/homepage");
-    }
+  } catch (error) {
+    console.error("/send error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
 });
 
-// Route to display page messages (from subscribed pages)
-router.get("/page-messages", requireLogin, async (req, res) => {
-    try {
-        // Get the current user and populate page references
-        const user = await User.findById(req.session.user._id)
-            .populate({
-                path: 'messages.page',
-                model: 'Page'
-            });
-        
-        if (!user) {
-            return res.redirect("/login");
-        }
 
-        // Filter messages that have a page reference
-        const pageMessages = user.messages.filter(msg => msg.page);
 
-        res.render("./user/page-messages", {
-            title: "Page Messages | WhisperCloud",
-            user: user,
-            pageMessages: pageMessages
-        });
-    } catch (error) {
-        console.log("Error fetching page messages:", error);
-        res.redirect("/homepage");
+// // returns any PENDING messages to the leader
+// router.post("/check-leader-ping-messages", requireLogin, async (req, res) => {
+//   try {
+//     const { leaderId } = req.body;
+//     const leader = await User.findById(leaderId);
+//     if (!leader) return res.status(404).json({ success: false, error: "Leader not found" });
+
+//     const messages = await Message.find({
+//       receiverId:leaderId,
+//       type:"PING",
+//       status:"PENDING",
+//     });
+
+//     //filter old messages > 5000ms
+//     const filtered_messaged = []
+//     for(let message of messages){
+//       if(Date.now() - message.timestamp <= 5000){
+//           filtered_messaged.push(message)
+//       }
+      
+//     }
+
+//     // delete them after we send them to the leader 
+//     await Message.deleteMany({ _id: { $in: messages.map(m => m._id) } });
+
+
+//     return res.status(200).json({ success: true, messages:filtered_messaged });
+//   } catch (error) {
+//     console.error("check-leader-ping-messages Error", error);
+//     return res.status(500).json({ success: false, error: "Server error" });
+//   }
+// });
+
+
+// a route to listen for any messages
+router.post("/listen", requireLogin, async (req, res) => {
+  try {
+    const {type,senderId,receiverId} = req.body;
+    
+    const messages = await Message.find({
+        type,
+        senderId,
+        receiverId,
+    });
+
+    if (messages.length === 0) {
+          return res.status(200).json({ success: true, messages: [] });
     }
+
+    // delete messages so we don't read it again
+    await Message.deleteMany({ _id: { $in: messages.map(m => m._id) } });
+
+    return res.status(200).json({ success: true, messages});
+
+  } catch (error) {
+    console.error("/listen Error", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
 });
 
-// Optional: Route to view all pages (for subscription)
-router.get("/pages", requireLogin, async (req, res) => {
-    try {
-        const allPages = await Page.find({});
-        const user = await User.findById(req.session.user._id);
-
-        res.render("./user/pages", {
-            title: "Available Pages | WhisperCloud",
-            user: user,
-            pages: allPages
-        });
-    } catch (error) {
-        console.log("Error fetching pages:", error);
-        res.redirect("/homepage");
-    }
-});
-
-// Route to subscribe to a page
-router.post("/subscribe/:pageId", requireLogin, async (req, res) => {
-    try {
-        const { pageId } = req.params;
-        const user = await User.findById(req.session.user._id);
-
-        // Check if already subscribed
-        if (!user.subscribedPages.includes(pageId)) {
-            user.subscribedPages.push(pageId);
-            await user.save();
-        }
-
-        res.redirect("/pages");
-    } catch (error) {
-        console.log("Error subscribing to page:", error);
-        res.redirect("/pages");
-    }
-});
-
-// Route to unsubscribe from a page
-router.post("/unsubscribe/:pageId", requireLogin, async (req, res) => {
-    try {
-        const { pageId } = req.params;
-        const user = await User.findById(req.session.user._id);
-
-        user.subscribedPages = user.subscribedPages.filter(
-            id => id.toString() !== pageId
-        );
-        await user.save();
-
-        res.redirect("/pages");
-    } catch (error) {
-        console.log("Error unsubscribing from page:", error);
-        res.redirect("/pages");
-    }
-});
 
 module.exports = router;

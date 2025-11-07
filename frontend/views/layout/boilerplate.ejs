@@ -10,8 +10,10 @@
         window.user = <%- user ? JSON.stringify(user) : "null" %>;
     </script>
     <script src="/js/update-last-seen.js"></script>
-    <script src="/js/ping-leader.js"></script>
+    <script type="module" src="/js/ping-leader.js"></script>
+    <!-- <script  src="/js/ping-leader.js"></script> -->
     <script src="/js/leader-ack.js"></script>
+    <!-- <script src="/js/utils/ping.js"></script> -->
 
 
     <title>

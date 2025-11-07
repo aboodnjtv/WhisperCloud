@@ -4,7 +4,6 @@ const router = express.Router();
 const User = require("../models/user");
 const Message = require("../models/message");
 const requireLogin = require("../middleware/requireLogin");
-const message = require("../models/message");
 
 
 router.post("/update-last-seen", requireLogin, async (req, res) => {
