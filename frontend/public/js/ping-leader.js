@@ -1,4 +1,4 @@
-import {ping_leader ,lsiten_for_ack} from "./utils/pingAck.js";
+import {ping ,lsiten_for_ack} from "./utils/pingAck.js";
 
 
 
@@ -55,7 +55,7 @@ if (window.user) {
 
       // if user is not waiting for reply, Ping leader
       if(!waitingForReply){
-        await ping_leader();
+        await ping(user._id,user.leaderId);
         waitingForReply = true;
         // we start measuring form here
         lastPingTime = Date.now();
