@@ -1,31 +1,29 @@
-// function to PING the leader
-  // triggers the backend to send a message to the leader
-  export async function ping_leader(){
+  // function for senderId to PING  receiverId
+  export async function ping(senderId,receiverId){
     try{
-        // Query backend to ping leader
+        // Query backend to ping receiverId 
         await fetch("/send", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 type:"PING",
-                senderId: user._id,
-                receiverId: user.leaderId,
+                senderId,
+                receiverId,
                 payload:{},
                 status:"PENDING",
                 timestamp:Date.now()
             }),
         });
-        console.log("Pinged leader :) ")
+        console.log(`Pinged: ${receiverId}`)
     }
     catch(error){
         console.log("Error Ping, "+error);
     }
-    // return setTimeout(checkLeader, CHECK_INTERVAL_MS);
   }
 
   export async function lsiten_for_ack(senderId,receiverId){
     // listen for ONLY ACK messages 
-    const Leader_ACK_response = await fetch("/listen", {
+    const ack_response = await fetch("/listen", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -34,7 +32,7 @@
             receiverId,
           }),
         });
-        const data = await Leader_ACK_response.json();
+        const data = await ack_response.json();
         // if the messages is 0 then there are no ack found 
         return data.messages.length !== 0;
 
