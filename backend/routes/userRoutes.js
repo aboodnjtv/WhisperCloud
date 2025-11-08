@@ -63,6 +63,21 @@ router.post("/signup",async(req,res)=>{
 
 })
 
+router.post("/update-last-seen", requireLogin, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const curUser = await User.findById(userId);
+    if (!curUser) return res.status(404).json({ error: "User not found" });
+
+    curUser.lastSeen = Date.now();
+    await curUser.save();
+
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("update-last-seen error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+});
 
 
 module.exports = router;

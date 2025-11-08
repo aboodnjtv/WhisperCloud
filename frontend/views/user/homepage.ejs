@@ -5,7 +5,11 @@
 <div class="dashboard-container">
   <!-- Welcome Section -->
   <div class="welcome-section">
-    <h1>Welcome back, <%= user.name %>!</h1>
+    <% if(user._id ===user.leaderId ){ %>
+      <h1>👑 Welcome back, leader <%= user.name %> 👑</h1>
+    <%} else{ %>
+      <h1>Welcome back, <%= user.name %>!</h1>
+    <% } %>
     <p class="user-type-badge <%= user.type === 'admin' ? 'admin-badge' : 'peer-badge' %>">
       <%= user.type === 'admin' ? 'Administrator' : 'Peer Node' %>
     </p>

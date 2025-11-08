@@ -1,5 +1,8 @@
-// window.user is the current user
+import {ping_leader ,lsiten_for_ack} from "./utils/pingAck.js";
 
+
+
+// window.user is the current user
 // Only run if a user session is active
 if (window.user) {
   // Configuration (you can tweak these)
@@ -29,36 +32,7 @@ if (window.user) {
     return true;
   };
 
-  // function to PING the leader
-  // triggers the backend to send a message to the leader
-  const ping_leader = async()=>{
-    waitingForReply = true;
-    // we start measuring form here
-    lastPingTime = Date.now();
-    // Query backend to ping leader
-    await fetch("/ping-leader", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: user._id,
-        leaderId: user.leaderId
-      }),
-    });
-    console.log("Pinged leader")
-    return setTimeout(checkLeader, CHECK_INTERVAL_MS);
-  }
-
-  const check_leader_ack = async()=>{
-    const Leader_ACK_response = await fetch("/check-leader-ack", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: user._id,
-          }),
-        });
-
-        return await Leader_ACK_response.json();
-  }
+ 
   
 
   // function to start the leader election
@@ -74,7 +48,7 @@ if (window.user) {
   }
 
 
-  checkLeader = async () => {
+  const checkLeader = async () => {
     try {
 
       if (!check_leader_existence() || !check_current_user_is_not_leader()) return;
@@ -82,17 +56,20 @@ if (window.user) {
       // if user is not waiting for reply, Ping leader
       if(!waitingForReply){
         await ping_leader();
+        waitingForReply = true;
+        // we start measuring form here
+        lastPingTime = Date.now();
+        setTimeout(checkLeader, CHECK_INTERVAL_MS);
       }
       // else, Check if leader replied
       else{
         // check if leader ACK came
-        const leader_ACK_data = await check_leader_ack();
-
-        if(leader_ACK_data && leader_ACK_data.ACK!=null){
+        const leader_ack = await lsiten_for_ack(user.leaderId,user._id);
+        // if got an ACK, leader is alive
+        if(leader_ack){
           console.log("✅ Leader is ALIVE");
           waitingForReply = false; // so that we staring Pinging again
           lastPingTime = Date.now();
-
         }
         // waited for too long with no ACK
         // declare leader has failed 
