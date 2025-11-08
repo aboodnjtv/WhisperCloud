@@ -63,6 +63,31 @@ router.post("/signup",async(req,res)=>{
 
 })
 
+
+
+router.get("/peers", requireLogin, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.session.user._id).populate("peers");
+    if (!currentUser) {
+      return res.status(404).send("User not found");
+    }
+
+    const peers = currentUser.peers || [];
+    const peerCount = peers.length;
+
+    res.render("user/peers", {
+      currentUser,
+      peers,
+      peerCount,
+    });
+  } catch (err) {
+    console.error("Error fetching user peers:", err);
+    res.status(500).send("Server Error");
+  }
+});
+
+
+
 router.post("/update-last-seen", requireLogin, async (req, res) => {
   try {
     const { userId } = req.body;

@@ -1,4 +1,4 @@
-import {ping ,lsiten_for_ack} from "./utils/pingAck.js";
+import {ping ,lsiten_for_ack} from "../utils/pingAck";
 
 
 
