@@ -64,15 +64,12 @@ if (window.user) {
       // else, Check if leader replied
       else{
         // check if leader ACK came
-
         const leader_ack = await lsiten_for_ack(user.leaderId,user._id);
-
         // if got an ACK, leader is alive
         if(leader_ack){
           console.log("✅ Leader is ALIVE");
           waitingForReply = false; // so that we staring Pinging again
           lastPingTime = Date.now();
-
         }
         // waited for too long with no ACK
         // declare leader has failed 
