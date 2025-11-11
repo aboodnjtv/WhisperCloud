@@ -1,4 +1,4 @@
-if (window.user && user.isLeader) {
+if (window.user && user._id===user.leaderId ) {
     const CHECK_MESSAGES_MS = 2000; // how often the leader checks for new messages
     const get_leader_ping_messages = async()=>{
     // fetch pending ping messages from DB 

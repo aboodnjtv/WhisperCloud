@@ -7,12 +7,16 @@
     <link rel="stylesheet" href="css/auth.css">
     <link rel="stylesheet" href="css/db.css">
     <script>
-        window.user = <%- user ? JSON.stringify(user) : "null" %>;
+        <% if (user) { %>
+            window.user = <%- JSON.stringify(user) %>;
+        <% } else { %>
+            window.user = null;
+        <% } %>
     </script>
     <script src="/js/update-last-seen.js"></script>
-    <script type="module" src="/js/ping-leader.js"></script>
+    <script type="module" src="/js/leader-election/ping-leader.js"></script>
     <!-- <script  src="/js/ping-leader.js"></script> -->
-    <script src="/js/leader-ack.js"></script>
+    <script src="/js/leader-election/leader-ack.js"></script>
     <!-- <script src="/js/utils/ping.js"></script> -->
 
 
