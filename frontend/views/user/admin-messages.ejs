@@ -1,0 +1,70 @@
+<% layout('layout/boilerplate') %>
+
+<link rel="stylesheet" href="/css/messages.css">
+
+<div class="messages-container">
+  <div class="header">
+    <h1>📢 Admin Broadcasts</h1>
+    <p class="subtitle">System-wide messages from administrators</p>
+    <a href="/homepage" class="back-btn">← Back to Home</a>
+  </div>
+
+  <% if (adminMessages && adminMessages.length > 0) { %>
+    <div class="messages-grid">
+      <% adminMessages.forEach(msg => { %>
+        <div class="message-card admin-message">
+          <div class="message-header">
+            <span class="message-type">ADMIN BROADCAST</span>
+            <span class="message-id">ID: <%= msg.messageId %></span>
+          </div>
+          
+          <!-- User Information -->
+          <div class="message-info-row">
+            <div class="info-item">
+              <span class="info-label">👤 Recipient:</span>
+              <span class="info-value"><%= user.name %></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">📢 Sender:</span>
+              <span class="info-value">System Administrator</span>
+            </div>
+          </div>
+
+          <!-- Page Name (Broadcast Channel) -->
+          <div class="message-info-row">
+            <div class="info-item full-width">
+              <span class="info-label">📄 Page/Channel:</span>
+              <span class="info-value">System Broadcast</span>
+            </div>
+          </div>
+
+          <!-- Message Content -->
+          <div class="message-content">
+            <div class="content-label">Message Content:</div>
+            <%= msg.content %>
+          </div>
+          
+          <!-- Time Received -->
+          <div class="message-footer">
+            <span class="timestamp">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Received: <%= new Date(msg.timestamp).toLocaleString('en-US', { 
+                dateStyle: 'full', 
+                timeStyle: 'medium' 
+              }) %>
+            </span>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No Admin Messages Yet</h3>
+      <p>You haven't received any broadcast messages from administrators.</p>
+    </div>
+  <% } %>
+</div>

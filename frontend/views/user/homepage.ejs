@@ -1,0 +1,116 @@
+<% layout('layout/boilerplate') %>
+
+<link rel="stylesheet" href="/css/homepage.css">
+
+<div class="dashboard-container">
+  <!-- Welcome Section -->
+  <div class="welcome-section">
+    <% if(user._id ===user.leaderId ){ %>
+      <h1>👑 Welcome back, leader <%= user.name %> 👑</h1>
+    <%} else{ %>
+      <h1>Welcome back, <%= user.name %>!</h1>
+    <% } %>
+    <p class="user-type-badge <%= user.type === 'admin' ? 'admin-badge' : 'peer-badge' %>">
+      <%= user.type === 'admin' ? 'Administrator' : 'Peer Node' %>
+    </p>
+  </div>
+
+  <!-- Stats Grid -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-info">
+        <h3><%= user.subscribedPages ? user.subscribedPages.length : 0 %></h3>
+        <p>Subscribed Pages</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">💬</div>
+      <div class="stat-info">
+        <h3><%= user.messages ? user.messages.length : 0 %></h3>
+        <p>Total Messages</p>
+      </div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-icon">📡</div>
+      <div class="stat-info">
+        <h3 style="font-size: 1rem;">Admin, Peer Node 1</h3>
+        <p>Message Senders</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions Section -->
+  <div class="actions-section">
+    <h2>Quick Actions</h2>
+
+    <div class="action-cards">
+      <!-- Admin Broadcasts -->
+      <a href="/admin-messages" class="action-card admin-card">
+        <div class="action-icon">📢</div>
+        <div class="action-content">
+          <h3>Admin Broadcasts</h3>
+          <p>View system-wide messages from administrators</p>
+          <%
+            const adminCount = user.messages ? user.messages.filter(msg => !msg.page).length : 0;
+          %>
+          <span class="badge"><%= adminCount %> messages</span>
+        </div>
+      </a>
+
+      <!-- Page Messages -->
+      <a href="/page-messages" class="action-card page-card">
+        <div class="action-icon">📄</div>
+        <div class="action-content">
+          <h3>Page Messages</h3>
+          <p>Updates from your subscribed pages and APIs</p>
+          <%
+            const pageCount = user.messages ? user.messages.filter(msg => msg.page).length : 0;
+          %>
+          <span class="badge"><%= pageCount %> messages</span>
+        </div>
+      </a>
+
+      <!-- Browse Pages -->
+      <a href="/pages" class="action-card pages-card">
+        <div class="action-icon">🔍</div>
+        <div class="action-content">
+          <h3>Browse Pages</h3>
+          <p>Discover and subscribe to new content sources</p>
+          <span class="badge">Explore</span>
+        </div>
+      </a>
+
+      <!-- My Peers -->
+      <a href="/peers" class="action-card pages-card">
+        <div class="action-icon">👥</div>
+        <div class="action-content">
+          <h3>My Peers</h3>
+          <p>View your peer connections in the gossip network</p>
+          <span class="badge"><%= user.peers ? user.peers.length : 0 %> peers</span>
+        </div>
+      </a>
+
+      <!-- Admin Panel (if admin) -->
+      <% if (user.type === 'admin') { %>
+      <a href="/admin/dashboard" class="action-card admin-panel-card">
+        <div class="action-icon">⚙</div>
+        <div class="action-content">
+          <h3>Admin Panel</h3>
+          <p>Manage users, pages, and broadcast messages</p>
+          <span class="badge">Admin Only</span>
+        </div>
+      </a>
+      <% } %>
+    </div>
+  </div>
+
+  <!-- Logout Button -->
+  <div class="logout-section">
+    <form method="POST" action="/logout">
+      <button type="submit" class="logout-btn">Logout</button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,89 @@
+<% layout('layout/boilerplate') %>
+
+<link rel="stylesheet" href="/css/messages.css">
+
+<div class="messages-container">
+  <div class="header">
+    <h1>📄 Page Messages</h1>
+    <p class="subtitle">Updates from your subscribed pages</p>
+    <a href="/homepage" class="back-btn">← Back to Home</a>
+  </div>
+
+  <% if (pageMessages && pageMessages.length > 0) { %>
+    <div class="messages-grid">
+      <% pageMessages.forEach(msg => { %>
+        <div class="message-card page-message">
+          <div class="message-header">
+            <span class="message-type">
+              <%= msg.page ? msg.page.name : 'Unknown Page' %>
+            </span>
+            <span class="message-id">ID: <%= msg.messageId %></span>
+          </div>
+          
+          <!-- User Information -->
+          <div class="message-info-row">
+            <div class="info-item">
+              <span class="info-label">👤 Recipient:</span>
+              <span class="info-value"><%= user.name %></span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">📡 Sender:</span>
+              <span class="info-value">Page API System</span>
+            </div>
+          </div>
+
+          <!-- Page Name and Description -->
+          <div class="message-info-row">
+            <div class="info-item full-width">
+              <span class="info-label">📄 Page Name:</span>
+              <span class="info-value"><%= msg.page ? msg.page.name : 'N/A' %></span>
+            </div>
+          </div>
+          
+          <% if (msg.page && msg.page.description) { %>
+            <div class="page-description">
+              <span class="info-label">📝 Description:</span>
+              <%= msg.page.description %>
+            </div>
+          <% } %>
+          
+          <!-- Message Content -->
+          <div class="message-content">
+            <div class="content-label">Message Content:</div>
+            <%= msg.content %>
+          </div>
+          
+          <!-- Time Received and API Source -->
+          <div class="message-footer">
+            <span class="timestamp">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Received: <%= new Date(msg.timestamp).toLocaleString('en-US', { 
+                dateStyle: 'full', 
+                timeStyle: 'medium' 
+              }) %>
+            </span>
+            <% if (msg.page && msg.page.apiUrl) { %>
+              <span class="page-source">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+                </svg>
+                API: <%= msg.page.apiUrl %>
+              </span>
+            <% } %>
+          </div>
+        </div>
+      <% }) %>
+    </div>
+  <% } else { %>
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <h3>No Page Messages Yet</h3>
+      <p>Subscribe to pages to start receiving updates from external APIs.</p>
+      <a href="/pages" class="subscribe-btn">Browse Available Pages</a>
+    </div>
+  <% } %>
+</div>

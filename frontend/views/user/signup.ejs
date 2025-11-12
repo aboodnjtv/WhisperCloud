@@ -1,0 +1,21 @@
+<% pageClass = 'auth-page' %>
+<% layout("layout/boilerplate") %>
+<div class="glow one"></div>
+<div class="glow two"></div>
+
+<div class="auth-container">
+<h1>Create an account</h1>
+<p>Join WhisperCloud — the world of whisperers — and start communicating seamlessly.</p>
+
+<form action="/signup" method="POST">
+    <input type="text" name="name" placeholder="Full Name" required />
+    <input type="email" name="email" placeholder="Email Address" required />
+    <input type="password" name="password" placeholder="Password" required />
+    <button type="submit">Sign Up</button>
+</form>
+
+<div class="switch-link">
+    Already have an account?
+    <a href="/login">Sign in</a>
+</div>
+</div>

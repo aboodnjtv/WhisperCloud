@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Peers | WhisperCloud</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/homepage.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 40%, #fce7f3 100%);
+            min-height: 100vh;
+            padding: 2rem;
+            font-family: "Inter", sans-serif;
+        }
+        .back-btn {
+            display: inline-block;
+            padding: 0.6rem 1.5rem;
+            background: white;
+            border: 2px solid #8b5cf6;
+            border-radius: 9999px;
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        .back-btn:hover {
+            background: #8b5cf6;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="welcome-section">
+            <h1>👥 My Peer Connections</h1>
+            <p style="color: #64748b; margin-bottom: 1rem;">Users connected to you in the gossip network</p>
+            <a href="/homepage" class="back-btn">← Back to Home</a>
+        </div>
+
+        <% if (peers && peers.length > 0) { %>
+            <div class="stats-grid" style="margin-top: 2rem;">
+                <% for(let i = 0; i < peers.length; i++) { %>
+                    <% let peer = peers[i]; %>
+                    <div class="stat-card">
+                        <div class="stat-icon"><%= peer.isOnline ? '🟢' : '🔴' %></div>
+                        <div class="stat-info">
+                            <h3><%= peer.name %></h3>
+                            <p><%= peer.email %></p>
+                            <p><%= peer.isOnline ? 'Online' : 'Offline' %></p>
+                        </div>
+                    </div>
+                <% } %>
+            </div>
+        <% } else { %>
+            <div style="text-align: center; padding: 4rem 2rem; background: rgba(255, 255, 255, 0.9); border-radius: 1rem; margin-top: 2rem; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <p style="color: #64748b; font-size: 1rem; margin-bottom: 1rem;">No peer connections yet. Click below to setup connections.</p>
+                <button onclick="setupPeers()" style="padding: 0.8rem 2rem; background: linear-gradient(90deg, #60a5fa, #a78bfa); border: none; border-radius: 9999px; color: white; font-weight: 600; cursor: pointer; font-size: 1rem;">Setup Peer Connections</button>
+            </div>
+        <% } %>
+    </div>
+
+    <script>
+    async function setupPeers() {
+        try {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Setting up...';
+            
+            const response = await fetch('/peers/setup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✓ Peer connections established!');
+                window.location.reload();
+            } else {
+                alert('Failed to setup peers: ' + (data.error || 'Unknown error'));
+                btn.disabled = false;
+                btn.textContent = 'Setup Peer Connections';
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Failed to setup peers: ' + error.message);
+            event.target.disabled = false;
+            event.target.textContent = 'Setup Peer Connections';
+        }
+    }
+    </script>
+</body>
+</html>
