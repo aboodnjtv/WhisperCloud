@@ -110,22 +110,13 @@ if (window.user) {
             const randomDelay = 1000 
             return setTimeout(checkLeader, randomDelay);
 
-
-            // await update_leader(user._id,new_leader_id)
-            // console.log("new_leader_id: "+new_leader_id);
-            // return setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep monitoring
           }else{
             console.log("no ELECTION messages")
           }
-          
-          
 
-
+          // no COORDINATOR / ELECTION messages
+          // start the election
           await start_leader_election();
-          
-          // Wait 30s before next check
-          // const randomDelay = 30000 + Math.floor(Math.random() * 10000); // 30–40 seconds
-          const randomDelay = 1000 // 30–40 seconds
           return setTimeout(checkLeader, randomDelay);
 
         }
