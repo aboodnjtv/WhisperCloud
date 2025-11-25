@@ -87,8 +87,8 @@ if (window.user) {
             console.log("GOT coordinator_messages");
             console.log(coordinator_messages);
             const new_leader_id = coordinator_messages.messages[0].payload.new_leader_id;
+            window.user.election_state = undefined; // leader election is done 
             await update_leader(user._id,new_leader_id)
-            console.log("new_leader_id: "+new_leader_id);
             return setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep monitoring
           }else{
             console.log("no COORDINATOR messages")
@@ -104,6 +104,7 @@ if (window.user) {
               let senderId = msg.payload.senderId;
               await send("OK",user._id,senderId);
               console.log("Sent ((OK)) to "+senderId)
+              window.user.election_state = "WAIT"; // so if later got another ELECTION, it will respond to it.
             }
             // start your leader election 
             await start_leader_election();

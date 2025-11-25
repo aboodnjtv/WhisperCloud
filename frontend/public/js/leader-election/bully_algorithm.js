@@ -23,6 +23,7 @@ async function wait_for_oks() {
   const totalWait = 50000; // total 50 seconds
   const checkInterval = 5000; // check every 5 seconds
   const startTime = Date.now();
+  window.user.election_state ="WAIT"; // in order to listen for ELECTION messages and repond to them
 
   while (Date.now() - startTime < totalWait) {
     const ok_messages = await check_messages("OK", user._id);
@@ -47,6 +48,8 @@ async function wait_for_coordinator_messages() {
   const checkInterval = 5000;
   const startTime = Date.now();
   let coordinator_messages;
+  window.user.election_state ="WAIT"; // in order to listen for ELECTION messages and repond to them
+
 
   while (Date.now() - startTime < totalWait) {
     coordinator_messages = await check_messages("COORDINATOR", user._id);
@@ -71,6 +74,7 @@ async function wait_for_coordinator_messages() {
         // Coordinator message to all processes with lower
         // identifiers. Election is completed.
         if(higherPeers.length === 0){
+          window.user.election_state = undefined; // leader election is done 
           await send_coordinator_messages(lowerPeers);
         }
         else{
@@ -96,6 +100,8 @@ async function wait_for_coordinator_messages() {
             console.log("✅ GOT OK — waiting for COORDINATOR messages...");
             
             const coordinator_messages = await wait_for_coordinator_messages();
+            window.user.election_state =undefined; //Election is done either timeout or leader elected
+
             if (coordinator_messages) {
               console.log("🎉 GOT COORDINATOR message!");
               const new_leader_id = coordinator_messages.messages[0].payload.new_leader_id;
