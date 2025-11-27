@@ -5,14 +5,17 @@
 <div class="dashboard-container">
   <!-- Welcome Section -->
   <div class="welcome-section">
-    <% if(user._id ===user.leaderId ){ %>
+    <% if (String(user._id) === String(user.leaderId)) { %>
       <h1>👑 Welcome back, leader <%= user.name %> 👑</h1>
-    <%} else{ %>
+    <% } else { %>
       <h1>Welcome back, <%= user.name %>!</h1>
     <% } %>
     <p class="user-type-badge <%= user.type === 'admin' ? 'admin-badge' : 'peer-badge' %>">
       <%= user.type === 'admin' ? 'Administrator' : 'Peer Node' %>
     </p>
+    <form action="/peers" method="GET">
+      <button style="width: 300px; align-self: center; margin: 20px;">Show peers</button>
+    </form>
   </div>
 
   <!-- Stats Grid -->

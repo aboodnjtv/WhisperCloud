@@ -25,11 +25,13 @@ router.post("/login", async(req, res) => {
 
 })
 
-router.get("/homepage", requireLogin, (req, res) => {
-    res.render("./user/homepage", {
-        title: "Homepage | WhisperCloud",
-        user:req.session.user
-    })
+router.get("/homepage", requireLogin, async(req, res) => {
+  const curUser = await User.findById(req.session.user._id);
+  req.session.user = curUser; // update session
+  res.render("./user/homepage", {
+      title: "Homepage | WhisperCloud",
+      user:curUser
+  })
 })
 
 // Destroy session
@@ -63,6 +65,31 @@ router.post("/signup",async(req,res)=>{
 
 })
 
+
+
+router.get("/peers", requireLogin, async (req, res) => {
+  try {
+    const currentUser = await User.findById(req.session.user._id).populate("peers");
+    if (!currentUser) {
+      return res.status(404).send("User not found");
+    }
+
+    const peers = currentUser.peers || [];
+    const peerCount = peers.length;
+
+    res.render("user/peers", {
+      currentUser,
+      peers,
+      peerCount,
+    });
+  } catch (err) {
+    console.error("Error fetching user peers:", err);
+    res.status(500).send("Server Error");
+  }
+});
+
+
+
 router.post("/update-last-seen", requireLogin, async (req, res) => {
   try {
     const { userId } = req.body;
@@ -75,6 +102,21 @@ router.post("/update-last-seen", requireLogin, async (req, res) => {
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error("update-last-seen error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+});
+
+
+router.post("/update_leader", requireLogin, async (req, res) => {
+  try {
+    const { userId,newLeaderId } = req.body;
+    const curUser = await User.findById(userId);
+    if (!curUser) return res.status(404).json({ error: "User not found" });
+    curUser.leaderId = newLeaderId;
+    await curUser.save();
+    return res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("update_leader error:", error);
     return res.status(500).json({ success: false, error: "Server error" });
   }
 });

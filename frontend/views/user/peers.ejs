@@ -1,0 +1,43 @@
+<% layout("layout/boilerplate") %>
+
+<h1><%= currentUser.name %> — Connected Peers</h1>
+
+<div class="counts-container">
+  <div class="count-card peer-count">
+    <span class="count-number"><%= peerCount %></span>
+    <span class="count-label">Total Peers</span>
+  </div>
+</div>
+
+<div class="table-container">
+  <% if (peers && peers.length > 0) { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>bcastId</th>
+          <th>whisId</th>
+          <th>isLeader</th>
+          <th>Last Seen</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% peers.forEach(peer => { %>
+          <tr>
+            <td><%= peer.name %></td>
+            <td><%= peer.email %></td>
+            <td><%= peer.bcastId %></td>
+            <td><%= peer.whisId %></td>
+            <td class="<%= peer.isLeader ? 'leader' : '' %>">
+              <%= peer.isLeader ? "✅" : "❌" %>
+            </td>
+            <td><%= Math.round((Date.now() - peer.lastSeen) / 1000) %> seconds ago</td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <div class="no-users">No connected peers found.</div>
+  <% } %>
+</div>

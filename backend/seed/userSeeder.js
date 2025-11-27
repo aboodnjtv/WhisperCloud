@@ -58,6 +58,14 @@ const seedUsers = async () => {
       await user.save();
     }
 
+    // --- Connect all peers to each other ---
+    for (const peer of peerUsers) {
+      peer.peers = peerUsers
+        .filter(p => !p._id.equals(peer._id))
+        .map(p => p._id);
+      await peer.save();
+    }
+
     console.log(`Assigned leader: ${randomLeader.name}`);
     console.log("Seeding complete!");
 
