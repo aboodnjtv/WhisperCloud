@@ -23,7 +23,7 @@ async function wait_for_oks() {
   const totalWait = 50000; // total 50 seconds
   const checkInterval = 5000; // check every 5 seconds
   const startTime = Date.now();
-  window.user.election_state ="WAIT"; // in order to listen for ELECTION messages and repond to them
+  window.user.election_state ="ELECTION_RUNNING"; // in order to listen for ELECTION messages and repond to them
 
   while (Date.now() - startTime < totalWait) {
     const ok_messages = await check_messages("OK", user._id);
@@ -48,7 +48,7 @@ async function wait_for_coordinator_messages() {
   const checkInterval = 5000;
   const startTime = Date.now();
   let coordinator_messages;
-  window.user.election_state ="WAIT"; // in order to listen for ELECTION messages and repond to them
+  window.user.election_state ="ELECTION_RUNNING"; // in order to listen for ELECTION messages and repond to them
 
 
   while (Date.now() - startTime < totalWait) {
@@ -105,7 +105,7 @@ async function wait_for_coordinator_messages() {
             if (coordinator_messages) {
               console.log("🎉 GOT COORDINATOR message!");
               const new_leader_id = coordinator_messages.messages[0].payload.new_leader_id;
-            await new Promise(resolve => setTimeout(resolve, 5000));
+              await new Promise(resolve => setTimeout(resolve, 5000));
               await update_leader(user._id, new_leader_id);
               return;
             }
@@ -117,8 +117,11 @@ async function wait_for_coordinator_messages() {
               // election run.
               console.log("❌ No COORDINATOR after 80s → Restart the election...");
               await new Promise(resolve => setTimeout(resolve, 5000));
-              // start a new election
-              await start_leader_election();
+              
+              //to prevent restarting the election if a coordinator message has already been processed
+              if(window.user.election_state !== "DONE"){
+                await start_leader_election();
+              }
             }
 
           }else{
