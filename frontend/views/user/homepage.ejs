@@ -102,8 +102,15 @@
 
   <!-- Logout Button -->
   <div class="logout-section">
-    <form method="POST" action="/logout">
+    <form id="logoutForm" method="POST" action="/logout">
       <button type="submit" class="logout-btn">Logout</button>
     </form>
   </div>
+
 </div>
+
+<script>
+  document.getElementById("logoutForm").addEventListener("submit", (e) => {
+    sessionStorage.removeItem("alreadyLoaded");
+  });
+</script>

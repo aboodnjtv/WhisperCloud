@@ -21,7 +21,7 @@
     }
   }
 
-  export async function lsiten_for_ack(senderId,receiverId){
+  export async function listen_for_ack(senderId,receiverId){
     // listen for ONLY ACK messages 
     const ack_response = await fetch("/listen", {
           method: "POST",

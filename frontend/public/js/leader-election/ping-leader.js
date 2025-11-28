@@ -1,15 +1,27 @@
-import {ping ,lsiten_for_ack} from "../utils/pingAck.js";
+import {ping ,listen_for_ack} from "../utils/pingAck.js";
 import {start_leader_election} from "./bully_algorithm.js";
 import { check_messages } from "../utils/check_messages.js";
 import{update_leader} from "../utils/update_leader.js"
 import{send} from "../utils/send.js"
-
-
+const user = window.user;
 
 // window.user is the current user
 // Only run if a user session is active
 if (window.user) {
-  // Configuration (you can tweak these)
+
+
+  // only matters if you are the leader 
+  // Detect actual login vs refresh
+  let justLoggedIn = !sessionStorage.getItem("alreadyLoaded"); //initially, justLoggedIn = ture
+  console.log("--------------")
+  console.log("--------------")
+  console.log("--------------")
+  console.log("justLoggedIn: "+justLoggedIn)
+  console.log(user)
+  // Mark that the page has been loaded once
+  sessionStorage.setItem("alreadyLoaded", "true"); // on logout, it be cleared 
+
+  // Configuration 
   const CHECK_INTERVAL_MS = 1000;   // how often to check leader
   const STALE_THRESHOLD_MS = 10000;  // if leader hasn't updated in this many ms -> considered dead
 
@@ -31,6 +43,14 @@ if (window.user) {
   const check_current_user_is_not_leader = async() => {
     if (user.leaderId === user._id) {
       console.warn("You are the Leader.");
+
+      // if you have just logged in 
+      // start a new election
+      if (justLoggedIn) {
+        console.log("Just logged in as leader → starting election");
+        await start_leader_election();
+        }
+
       // check for any election
       // const election_messages = await check_messages("ELECTION",user._id);
       // console.log("LEADER ELECTION messages")
@@ -58,7 +78,7 @@ if (window.user) {
       // else, Check if leader replied
       else{
         // check if leader ACK came
-        const leader_ack = await lsiten_for_ack(user.leaderId,user._id);
+        const leader_ack = await listen_for_ack(user.leaderId,user._id);
         // if got an ACK, leader is alive
         if(leader_ack){
           console.log("✅ Leader is ALIVE");
@@ -77,6 +97,7 @@ if (window.user) {
           // const delay = 3000 + Math.floor(Math.random() * 3000); // 3-6 seconds
           await new Promise(resolve => setTimeout(resolve, delay));
 
+          console.log("Starting election");
           
           // Check if someone else already started or won the election
           const coordinator_messages = await check_messages("COORDINATOR",user._id);
@@ -108,8 +129,7 @@ if (window.user) {
             }
             // start your leader election 
             await start_leader_election();
-            const randomDelay = 1000 
-            return setTimeout(checkLeader, randomDelay);
+            return setTimeout(checkLeader, 1000);
 
           }else{
             console.log("no ELECTION messages")
@@ -118,7 +138,7 @@ if (window.user) {
           // no COORDINATOR / ELECTION messages
           // start the election
           await start_leader_election();
-          return setTimeout(checkLeader, randomDelay);
+          return setTimeout(checkLeader, 1000);
 
         }
         setTimeout(checkLeader, CHECK_INTERVAL_MS);
@@ -127,6 +147,7 @@ if (window.user) {
 
     } catch (err) {
       console.error("Error checking leader:", err);
+
     }
   };
 
