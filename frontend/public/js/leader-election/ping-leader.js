@@ -99,44 +99,6 @@ if (window.user && window.user.type ==="peer") {
           await new Promise(resolve => setTimeout(resolve, delay));
 
           console.log("Starting election");
-          
-          // Check if someone else already started or won the election
-          // const coordinator_messages = await check_messages("COORDINATOR",user._id);
-          // const election_messages = await check_messages("ELECTION",user._id);
-          
-          // // coordinator_messages
-          // if (coordinator_messages && coordinator_messages.messages.length > 0) {
-          //   console.log("GOT coordinator_messages");
-          //   console.log(coordinator_messages);
-          //   const new_leader_id = coordinator_messages.messages[0].payload.new_leader_id;
-          //   window.user.election_state = undefined; // leader election is done 
-          //   await update_leader(user._id,new_leader_id)
-          //   return setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep monitoring
-          // }else{
-          //   console.log("no COORDINATOR messages")
-          // }
-
-          // // election_messages
-          // if (election_messages && election_messages.messages.length > 0) {
-          //   console.log("GOT election_messages");
-          //   console.log(election_messages.messages);
-          //   // const senderId = coordinator_messages.messages[0].payload.senderId;
-          //   //send OK the the senderId
-          //   for(let msg of election_messages.messages){
-          //     let senderId = msg.payload.senderId;
-          //     await send("OK",user._id,senderId);
-          //     console.log("Sent ((OK)) to "+senderId)
-          //     window.user.election_state = "WAIT"; // so if later got another ELECTION, it will respond to it.
-          //   }
-          //   // start your leader election 
-          //   await start_leader_election();
-          //   return setTimeout(checkLeader, 1000);
-
-          // }else{
-          //   console.log("no ELECTION messages")
-          // }
-
-          // no COORDINATOR / ELECTION messages
           if(window.user.election_state !== "ELECTION_RUNNING" ||
                         window.user.election_state !== "WAIT_OK"||
                         window.user.election_state !== "WAIT_COORDINATOR"

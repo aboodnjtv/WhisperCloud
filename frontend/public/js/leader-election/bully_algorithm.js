@@ -22,28 +22,16 @@ async function wait_for_oks() {
   const totalWait = 50000; // total 50 seconds
   const checkInterval = 5000; // check every 5 seconds
   const startTime = Date.now();
-  window.user.election_state ="ELECTION_RUNNING"; // in order to listen for ELECTION messages and repond to them
 
-  //window.user.election_state  could chage to "DONE" while waiting for OKs 
+  //window.user.election_state  could chage to WAIT_COORDINATOR or "DONE" while waiting for OKs 
   while (Date.now() - startTime < totalWait) {
-      
     if(window.user.election_state === "DONE" ||  window.user.election_state === "WAIT_COORDINATOR"){
-      console.log("✅ GOT OK, stopping early!");
       return true;  
     }
-    // const ok_messages = await check_messages("OK", user._id);
-
-    // if (ok_messages && ok_messages.messages.length > 0) {
-    //   console.log("✅ GOT OK, stopping early!");
-    //   return ok_messages;
-    // }
-
-    console.log("⏳ No OK yet, checking again...");
     await new Promise(resolve => setTimeout(resolve, checkInterval));
   }
   return false;
 
-  
 }
 
 
@@ -57,11 +45,8 @@ async function wait_for_coordinator_messages() {
     if(window.user.election_state === "DONE"){
       return true;  
     }
-    // coordinator_messages = await check_messages("COORDINATOR", user._id);
-    // if (coordinator_messages && coordinator_messages.messages.length > 0) {
-    //   return coordinator_messages;
-    // }
-    console.log("⏳ Still waiting for COORDINATOR...");
+    
+    console.log("⏳⏳⏳ waiting for COORDINATOR...");
     await new Promise(resolve => setTimeout(resolve, checkInterval));
   }
   return false;
@@ -100,6 +85,8 @@ async function wait_for_coordinator_messages() {
           // wait for OKs
           
           console.log("waiting for Oks")
+          // change the sate to WAIT_OK 
+          window.user.election_state = "WAIT_OK";
           const ok_messages = await wait_for_oks();
           // listen for OKs from those peers
           if(ok_messages ){
@@ -113,7 +100,13 @@ async function wait_for_coordinator_messages() {
               console.log("❌ No COORDINATOR after 80s → Restart the election...");
               await new Promise(resolve => setTimeout(resolve, 5000));
               //to prevent restarting the election if a coordinator message has already been processed
-              await start_leader_election();
+              if(window.user.election_state !== "ELECTION_RUNNING" ||
+                        window.user.election_state !== "WAIT_OK"||
+                        window.user.election_state !== "WAIT_COORDINATOR"
+                ){
+                // start the election
+                await start_leader_election();
+              }
             }
 
 

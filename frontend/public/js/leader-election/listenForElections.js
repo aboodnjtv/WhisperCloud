@@ -20,7 +20,7 @@ if (window.user) {
                 // The current peer is waiting for OK or COORDINATOR messsage
                 // so if another peer sends an ELECTION message to this peer
                 // just reply with OK --> so it also waits for COORDINATOR messsage
-                console.log(" -----------(( Listening For Elections ))------------")
+                // console.log(" -----------(( Listening For Elections ))------------")
                 const election_messages = await check_messages("ELECTION",user._id);
                 if (election_messages && election_messages.messages.length > 0) {
                     // console.log("GOT election_messages");
