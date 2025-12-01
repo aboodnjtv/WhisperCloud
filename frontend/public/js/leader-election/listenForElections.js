@@ -6,7 +6,7 @@ import {start_leader_election} from "./bully_algorithm.js";
 
 // window.user is the current user
 // Only run if a user session is active
-if (window.user) {
+if (window.user && window.user.type ==="peer") {
     const CHECK_INTERVAL_MS = 1000;   // how often to check
 
     
@@ -28,7 +28,8 @@ if (window.user) {
                     
                     if(window.user.election_state === "ELECTION_RUNNING" ||
                         window.user.election_state === "WAIT_OK"||
-                        window.user.election_state === "WAIT_COORDINATOR"
+                        window.user.election_state === "WAIT_COORDINATOR"||
+                        window.user.election_state === undefined
                     ){
                     //send OK the the senderId
                         for(let msg of election_messages.messages){

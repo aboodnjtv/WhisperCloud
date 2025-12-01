@@ -1,24 +1,18 @@
 import {ping ,listen_for_ack} from "../utils/pingAck.js";
 import {start_leader_election} from "./bully_algorithm.js";
-import { check_messages } from "../utils/check_messages.js";
-import{update_leader} from "../utils/update_leader.js"
-import{send} from "../utils/send.js"
 const user = window.user;
 
 // window.user is the current user
 // Only run if a user session is active
 if (window.user && window.user.type ==="peer") {
 
-
-  // only matters if you are the leader 
+  // only matters if current user was/still the leader 
   // Detect actual login vs refresh
   let justLoggedIn = !sessionStorage.getItem("alreadyLoaded"); //initially, justLoggedIn = ture
-  console.log("--------------")
-  console.log("--------------")
-  console.log("--------------")
-  console.log("--------------")
-  console.log("justLoggedIn: "+justLoggedIn)
-  console.log(user)
+  
+  if(user.leaderId === user._id){
+    console.log("Leader Just LoggedIn: Starting Election ")
+  }
   // Mark that the page has been loaded once
   sessionStorage.setItem("alreadyLoaded", "true"); // on logout, it be cleared 
 
@@ -30,10 +24,11 @@ if (window.user && window.user.type ==="peer") {
   let lastPingTime = Date.now();
 
   // function to ensure peer knows who the leader is
-  const check_leader_existence = () => {
+  const check_leader_existence = async() => {
     if (!user.leaderId) {
       console.warn("No leader assigned to this peer yet.");
-      // start election
+      // if it does not know any leader, start election
+      await start_leader_election();
       setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep checking later
       return false;
     }
@@ -45,17 +40,12 @@ if (window.user && window.user.type ==="peer") {
     if (user.leaderId === user._id) {
       console.warn("You are the Leader.");
 
-      // if you have just logged in 
+      // if you (leader) have just logged in 
       // start a new election
       if (justLoggedIn) {
         console.log("Just logged in as leader → starting election");
         await start_leader_election();
         }
-
-      // check for any election
-      // const election_messages = await check_messages("ELECTION",user._id);
-      // console.log("LEADER ELECTION messages")
-      // console.log(election_messages.messages)
 
       setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep checking later
       return false;

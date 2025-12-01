@@ -3,7 +3,6 @@ import{check_messages} from "../utils/check_messages.js"
 import{update_leader} from "../utils/update_leader.js"
 const user = window.user;
 
-
 // window.user is the current user
 // Only run if a user session is active
 if (window.user && window.user.type ==="peer") {
@@ -29,7 +28,7 @@ if (window.user && window.user.type ==="peer") {
                         await update_leader(user._id, new_leader_id);
                     }
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000)); // check every 1000 ms
+                await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL_MS));
 
             }
         } catch (err) {

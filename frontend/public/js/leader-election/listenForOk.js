@@ -1,7 +1,5 @@
 
 import{check_messages} from "../utils/check_messages.js"
-import{send} from "../utils/send.js"
-
 const user = window.user;
 
 // window.user is the current user
@@ -20,12 +18,12 @@ if (window.user && window.user.type ==="peer") {
                     const ok_messages = await check_messages("OK", user._id);
                     if (ok_messages && ok_messages.messages.length > 0) {
                         console.log("✅ GOT OK, stopping early!");
+                        // stop listening for OK messages and wait for a COORDINATOR message 
                         window.user.election_state ="WAIT_COORDINATOR";
                     }
                     console.log("⏳ No OK yet, checking again...");
                 }
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
+                await new Promise(resolve => setTimeout(resolve, CHECK_INTERVAL_MS));
 
             }
         } catch (err) {
