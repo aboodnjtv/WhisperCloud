@@ -26,7 +26,10 @@ if (window.user) {
                     // console.log("GOT election_messages");
                     // console.log(election_messages.messages);
                     
-                    if(window.user.election_state === "ELECTION_RUNNING"){
+                    if(window.user.election_state === "ELECTION_RUNNING" ||
+                        window.user.election_state === "WAIT_OK"||
+                        window.user.election_state === "WAIT_COORDINATOR"
+                    ){
                     //send OK the the senderId
                         for(let msg of election_messages.messages){
                             let senderId = msg.payload.senderId;
