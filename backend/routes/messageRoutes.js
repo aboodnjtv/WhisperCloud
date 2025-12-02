@@ -43,10 +43,10 @@ router.post("/listen", requireLogin, async (req, res) => {
     // delete messages so we don't read it again
     await Message.deleteMany({ _id: { $in: messages.map(m => m._id) } });
 
-    //filter old messages > 5000ms
+    //filter old messages > 20000ms
     const filtered_messaged = []
     for(let message of messages){
-      if(Date.now() - message.timestamp <= 5000){
+      if(Date.now() - message.timestamp <= 100000){
           filtered_messaged.push(message)
       }
     }
