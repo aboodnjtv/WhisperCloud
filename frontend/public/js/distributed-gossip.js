@@ -1,188 +1,246 @@
-// Only run for logged-in peers (not admins)
-if (window.user && window.user.type === 'peer') {
-    
-    const GOSSIP_CHECK_INTERVAL = 5000; // Check every 5 seconds
-    const FANOUT = 2; // Gossip to 2 random peers
-    const MAX_TTL = 7;
+// ============================================
+// DISTRIBUTED GOSSIP PROTOCOL - CLIENT-SIDE
+// ============================================
 
-    // Track what messages I've already gossiped
-    const gossipedMessages = new Set();
+const TTL = 7;
+const FANOUT = 2;
+const CHECK_INTERVAL_MS = 50000;
+const LEADER_FETCH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
-    /**
-     * Main gossip loop - runs continuously on each peer
-     */
-    async function runGossipCycle() {
-        try {
-            // STEP 1: Check if I have any new messages to gossip
-            const newMessages = await getMyUnGossipedMessages();
-            
-            if (newMessages.length === 0) {
-                // Nothing to gossip, check again later
-                setTimeout(runGossipCycle, GOSSIP_CHECK_INTERVAL);
-                return;
-            }
+let processedMessages = new Set();
 
-            console.log(`[GOSSIP] Found ${newMessages.length} new messages to propagate`);
-
-            // STEP 2: For each new message, gossip to my peers
-            for (const message of newMessages) {
-                await gossipMessageToMyPeers(message);
-                
-                // Mark as gossiped so I don't send it again
-                gossipedMessages.add(message.messageId);
-            }
-
-        } catch (error) {
-            console.error('[GOSSIP] Error in gossip cycle:', error);
-        }
-
-        // Schedule next cycle
-        setTimeout(runGossipCycle, GOSSIP_CHECK_INTERVAL);
+// ============================================
+// CHECK IF CURRENT USER IS LEADER
+// ============================================
+async function checkIfLeader() {
+    try {
+        const response = await fetch('/gossip/am-i-leader', {
+            credentials: 'same-origin'  // ← ADDED
+        });
+        const data = await response.json();
+        return data.isLeader;
+    } catch (error) {
+        console.error('[GOSSIP] Error checking leader status:', error);
+        return false;
     }
+}
 
-    /**
-     * Get messages from MY database that I haven't gossiped yet
-     */
-    async function getMyUnGossipedMessages() {
-        try {
-            const response = await fetch('/gossip/my-messages', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = await response.json();
-            
-            if (!data.success) return [];
-
-            // Filter out messages I've already gossiped
-            const unGossiped = data.messages.filter(msg => 
-                !gossipedMessages.has(msg.messageId) &&
-                msg.ttl > 0 // Only gossip if TTL not expired
-            );
-
-            return unGossiped;
-
-        } catch (error) {
-            console.error('[GOSSIP] Error fetching my messages:', error);
-            return [];
-        }
-    }
-
-    /**
-     * Gossip a message to my peers
-     */
-    async function gossipMessageToMyPeers(message) {
-        try {
-            // Get my peer connections
-            const response = await fetch('/gossip/my-peers', {
-                method: 'GET',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = await response.json();
-            
-            if (!data.success || !data.peers || data.peers.length === 0) {
-                console.log('[GOSSIP] No peers to gossip to');
-                return;
-            }
-
-            // Filter to only online peers
-            const onlinePeers = data.peers.filter(p => p.isOnline);
-
-            if (onlinePeers.length === 0) {
-                console.log('[GOSSIP] No online peers');
-                return;
-            }
-
-            // Select random peers (fanout)
-            const selectedPeers = selectRandomPeers(onlinePeers, FANOUT);
-
-            console.log(`[GOSSIP] Gossiping message ${message.messageId} to ${selectedPeers.length} peers`);
-
-            // Send gossip message to each selected peer
-            for (const peer of selectedPeers) {
-                await sendGossipMessage(peer._id, message);
-            }
-
-        } catch (error) {
-            console.error('[GOSSIP] Error gossiping to peers:', error);
-        }
-    }
-
-    /**
-     * Send a gossip message to a specific peer
-     */
-    async function sendGossipMessage(peerId, message) {
-        try {
-            const response = await fetch('/gossip/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    receiverId: peerId,
-                    pageId: message.pageId,
-                    pageName: message.pageName,
-                    messageId: message.messageId,
-                    content: message.content,
-                    ttl: message.ttl - 1 // Decrement TTL
-                })
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
-                console.log(`[GOSSIP] ✓ Gossiped to peer ${peerId}`);
-            } else {
-                console.log(`[GOSSIP] ✗ Failed to gossip to peer ${peerId}: ${data.reason}`);
-            }
-
-        } catch (error) {
-            console.error(`[GOSSIP] Error sending to peer ${peerId}:`, error);
-        }
-    }
-
-    /**
-     * Select random peers (Fisher-Yates shuffle)
-     */
-    function selectRandomPeers(peers, count) {
-        if (peers.length <= count) return peers;
+// ============================================
+// LEADER: FETCH FROM PAGES
+// ============================================
+async function leaderFetchFromPages() {
+    try {
+        console.log('[LEADER] Fetching from pages...');
         
-        const shuffled = [...peers].sort(() => Math.random() - 0.5);
-        return shuffled.slice(0, count);
-    }
-
-    /**
-     * Check if I'm the leader (for initiating gossip from pages)
-     */
-    async function leaderFetchAndInitiate() {
-        if (!window.user.isLeader) return;
-
-        try {
-            console.log('[LEADER] Fetching from pages...');
-
-            const response = await fetch('/gossip/leader-fetch', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
-            });
-
-            const data = await response.json();
-
-            if (data.success) {
+        const response = await fetch('/gossip/leader-fetch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin'  // ← ADDED
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            if (data.messagesCount > 0) {
                 console.log(`[LEADER] Fetched ${data.messagesCount} new page updates`);
-                // These will be gossiped in the next cycle
+            } else {
+                console.log('[LEADER] No new messages to fetch');
             }
-
-        } catch (error) {
-            console.error('[LEADER] Error fetching from pages:', error);
         }
+    } catch (error) {
+        console.error('[LEADER] Error fetching from pages:', error);
     }
+}
 
-    // If leader, fetch from pages periodically
-    if (window.user.isLeader) {
-        setInterval(leaderFetchAndInitiate, 30000); // Every 30 seconds
-        leaderFetchAndInitiate(); // Run immediately
+// ============================================
+// GET MY MESSAGES
+// ============================================
+async function getMyMessages() {
+    try {
+        const response = await fetch('/gossip/my-messages', {
+            credentials: 'same-origin'  // ← ADDED
+        });
+        const data = await response.json();
+        return data.messages || [];
+    } catch (error) {
+        console.error('[GOSSIP] Error fetching my messages:', error);
+        return [];
     }
+}
 
-    // Start the gossip cycle
-    console.log('[GOSSIP] Starting distributed gossip protocol');
-    runGossipCycle();
+// ============================================
+// GET MY CONNECTED PEERS
+// ============================================
+async function getMyPeers() {
+    try {
+        const response = await fetch('/gossip/my-peers', {
+            credentials: 'same-origin'  // ← ADDED
+        });
+        const data = await response.json();
+        return data.peers || [];
+    } catch (error) {
+        console.error('[GOSSIP] Error fetching peers:', error);
+        return [];
+    }
+}
+
+// ============================================
+// SELECT RANDOM PEERS (FANOUT)
+// ============================================
+function selectRandomPeers(peers, count) {
+    const shuffled = peers.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+}
+
+// ============================================
+// SEND MESSAGE TO PEER
+// ============================================
+async function sendMessageToPeer(peerId, messageId, content, ttl, pageName) {
+    try {
+        const response = await fetch('/gossip/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',  // ← ADDED
+            body: JSON.stringify({
+                receiverId: peerId,
+                messageId,
+                content,
+                ttl,
+                pageName
+            })
+        });
+        
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error(`[GOSSIP] Error sending to peer ${peerId}:`, error);
+        return false;
+    }
+}
+
+// ============================================
+// GOSSIP TO RANDOM PEERS
+// ============================================
+async function gossipToRandomPeers() {
+    try {
+        const myMessages = await getMyMessages();
+        
+        const newMessages = myMessages.filter(msg => 
+            msg.ttl > 0 && !processedMessages.has(msg.messageId)
+        );
+        
+        if (newMessages.length === 0) {
+            return;
+        }
+        
+        console.log(`[GOSSIP] Found ${newMessages.length} new messages to propagate`);
+        
+        const allPeers = await getMyPeers();
+        
+        if (allPeers.length === 0) {
+            console.log('[GOSSIP] No peers to gossip to');
+            return;
+        }
+        
+        console.log(`[GOSSIP] Found ${allPeers.length} connected peers`);
+        
+        for (const message of newMessages) {
+            const selectedPeers = selectRandomPeers(allPeers, FANOUT);
+            
+            console.log(`[GOSSIP] Gossiping message ${message.messageId.substring(0, 20)}... to ${selectedPeers.length} peers`);
+            
+            for (const peer of selectedPeers) {
+                const success = await sendMessageToPeer(
+                    peer._id,
+                    message.messageId,
+                    message.content,
+                    message.ttl - 1,
+                    message.pageName
+                );
+                
+                if (success) {
+                    console.log(`[GOSSIP] ✓ Gossiped to peer ${peer.name}`);
+                }
+            }
+            
+            processedMessages.add(message.messageId);
+        }
+        
+    } catch (error) {
+        console.error('[GOSSIP] Error in gossip protocol:', error);
+    }
+}
+
+// ============================================
+// UPDATE LAST SEEN (HEARTBEAT)
+// ============================================
+async function updateLastSeen() {
+    try {
+        await fetch('/update-last-seen', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin' 
+        });
+    } catch (error) {
+        // Silent failure - not critical
+    }
+}
+
+// ============================================
+// START GOSSIP PROTOCOL
+// ============================================
+async function startGossipProtocol() {
+    console.log('\n╔══════════════════════════════════════════╗');
+    console.log('║  DISTRIBUTED GOSSIP PROTOCOL STARTED    ║');
+    console.log('╚══════════════════════════════════════════╝\n');
+    console.log(`📊 Configuration:`);
+    console.log(`   TTL: ${TTL}`);
+    console.log(`   FANOUT: ${FANOUT}`);
+    console.log(`   Gossip Interval: ${CHECK_INTERVAL_MS / 1000}s`);
+    console.log(`   Leader Fetch Interval: ${LEADER_FETCH_INTERVAL_MS / 1000 / 60 / 60}h\n`);
+    
+    const isLeader = await checkIfLeader();
+    
+    if (isLeader) {
+        console.log('👑 LEADER MODE ACTIVATED');
+        console.log('   Role: Fetch from external APIs');
+        console.log('   Interval: Every 2 hours\n');
+        
+        await leaderFetchFromPages();
+        
+        const nextFetchTime = new Date(Date.now() + LEADER_FETCH_INTERVAL_MS);
+        console.log(`⏰ Next API fetch scheduled for: ${nextFetchTime.toLocaleString()}\n`);
+        
+        setInterval(async () => {
+            console.log('\n⏰ 2-HOUR INTERVAL REACHED');
+            console.log('══════════════════════════════════════════');
+            await leaderFetchFromPages();
+            
+            const nextFetch = new Date(Date.now() + LEADER_FETCH_INTERVAL_MS);
+            console.log(`⏰ Next fetch: ${nextFetch.toLocaleString()}\n`);
+        }, LEADER_FETCH_INTERVAL_MS);
+    } else {
+        console.log('📡 PEER MODE');
+        console.log('   Role: Receive and propagate updates');
+        console.log('   Method: Gossip protocol\n');
+    }
+    
+    console.log('🔄 Starting gossip loop...\n');
+    
+    setInterval(async () => {
+        await gossipToRandomPeers();
+    }, CHECK_INTERVAL_MS);
+    
+    setInterval(async () => {
+        await updateLastSeen();
+    }, 10000);
+}
+
+// ============================================
+// START ON PAGE LOAD
+// ============================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startGossipProtocol);
+} else {
+    startGossipProtocol();
 }

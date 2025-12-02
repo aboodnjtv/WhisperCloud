@@ -1,59 +1,149 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const User = require('../models/user');
-const requireLogin = require('../middleware/requireLogin');
-const apiFetcher = require('../services/apiFetcher');
+const User = require("../models/user");
+const Page = require("../models/page");
+const requireLogin = require("../middleware/requireLogin");
+const apiFetcher = require("../services/apiFetcher");
 
-/**
- * Get MY messages (for gossip propagation)
- */
+// ============================================
+// 1. CHECK IF LEADER
+// ============================================
+router.get('/gossip/am-i-leader', requireLogin, async (req, res) => {
+    try {
+        if (!req.session?.user?._id) {
+            return res.json({ success: false, isLeader: false });
+        }
+
+        const user = await User.findById(req.session.user._id);
+        
+        if (!user) {
+            return res.json({ success: false, isLeader: false });
+        }
+
+        res.json({
+            success: true,
+            isLeader: user.isLeader || false,
+            userName: user.name
+        });
+
+    } catch (error) {
+        console.error('[AM I LEADER] Error:', error);
+        res.json({ success: false, isLeader: false });
+    }
+});
+
+// ============================================
+// 2. LEADER FETCH FROM PAGES
+// ============================================
+router.post('/gossip/leader-fetch', requireLogin, async (req, res) => {
+    try {
+        const userId = req.session.user._id;
+        const user = await User.findById(userId);
+
+        if (!user || !user.isLeader) {
+            return res.status(403).json({ 
+                success: false, 
+                error: 'Not leader' 
+            });
+        }
+
+        console.log('[LEADER FETCH] Fetching from external APIs...');
+        const pageUpdates = await apiFetcher.fetchAllPages();
+
+        if (pageUpdates.length === 0) {
+            return res.json({
+                success: true,
+                messagesCount: 0
+            });
+        }
+
+        let newMessagesCount = 0;
+
+        for (const update of pageUpdates) {
+            const exists = user.messages.some(msg => 
+                msg.messageId === update.messageId
+            );
+            
+            if (!exists) {
+                user.messages.push({
+                    messageId: update.messageId,
+                    page: update.pageId,
+                    pageName: update.pageName,
+                    content: update.content,
+                    ttl: 7,
+                    timestamp: update.timestamp,
+                    receivedVia: 'LEADER_FETCH'
+                });
+                newMessagesCount++;
+            }
+        }
+
+        if (newMessagesCount > 0) {
+            await user.save();
+            console.log(`[LEADER FETCH] ✅ ${user.name} fetched ${newMessagesCount} new messages`);
+        } else {
+            console.log(`[LEADER FETCH] ${user.name} - no new messages`);
+        }
+
+        res.json({
+            success: true,
+            messagesCount: newMessagesCount
+        });
+
+    } catch (error) {
+        console.error('[LEADER FETCH] Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
+    }
+});
+
+// ============================================
+// 3. GET MY MESSAGES
+// ============================================
 router.get('/gossip/my-messages', requireLogin, async (req, res) => {
     try {
         const userId = req.session.user._id;
         const user = await User.findById(userId);
 
         if (!user) {
-            return res.json({ success: false, messages: [] });
+            return res.status(404).json({ 
+                success: false, 
+                error: 'User not found' 
+            });
         }
-
-        // Return messages that should be gossiped
-        // These are messages I received that still have TTL > 0
-        const gossipableMessages = user.messages
-            .filter(msg => msg.ttl && msg.ttl > 0)
-            .map(msg => ({
-                messageId: msg.messageId,
-                pageId: msg.page,
-                pageName: msg.pageName || 'Unknown',
-                content: msg.content,
-                ttl: msg.ttl,
-                timestamp: msg.timestamp
-            }));
 
         res.json({
             success: true,
-            messages: gossipableMessages
+            messages: user.messages || []
         });
 
     } catch (error) {
-        console.error('Error fetching my messages:', error);
-        res.json({ success: false, messages: [] });
+        console.error('[MY MESSAGES] Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
 
-/**
- * Get MY peer connections
- */
+// ============================================
+// 4. GET MY PEERS
+// ============================================
 router.get('/gossip/my-peers', requireLogin, async (req, res) => {
     try {
         const userId = req.session.user._id;
-        const user = await User.findById(userId).populate('peers', '_id name isOnline lastSeen');
+        const user = await User.findById(userId).populate('peers', 'name lastSeen');
 
         if (!user) {
-            return res.json({ success: false, peers: [] });
+            return res.status(404).json({ 
+                success: false, 
+                error: 'User not found' 
+            });
         }
 
-        // Calculate online status based on lastSeen
-        const ONLINE_THRESHOLD_MS = 30000; // 30 seconds
+        const ONLINE_THRESHOLD_MS = 30000;
         const now = Date.now();
         
         const peersWithOnlineStatus = (user.peers || []).map(peer => {
@@ -63,118 +153,111 @@ router.get('/gossip/my-peers', requireLogin, async (req, res) => {
             return {
                 _id: peer._id,
                 name: peer.name,
-                isOnline: isActuallyOnline,  // ← Computed, not from DB
+                isOnline: isActuallyOnline,
                 lastSeen: peer.lastSeen
             };
         });
 
-        res.json({
-            success: true,
-            peers: peersWithOnlineStatus
+        res.json({ 
+            success: true, 
+            peers: peersWithOnlineStatus 
         });
 
     } catch (error) {
-        console.error('Error fetching my peers:', error);
-        res.json({ success: false, peers: [] });
+        console.error('[MY PEERS] Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
 
-/**
- * RECEIVE a gossip message (peer-to-peer)
- */
+// ============================================
+// 5. SEND MESSAGE TO PEER (GOSSIP)
+// ============================================
 router.post('/gossip/send', requireLogin, async (req, res) => {
     try {
-        const { receiverId, pageId, pageName, messageId, content, ttl } = req.body;
+        const { receiverId, messageId, content, ttl, pageName } = req.body;
 
-        // Check TTL
         if (ttl <= 0) {
-            return res.json({ success: false, reason: 'TTL_EXPIRED' });
+            return res.json({ 
+                success: false, 
+                error: 'TTL expired' 
+            });
         }
 
-        // Get receiver
         const receiver = await User.findById(receiverId);
 
         if (!receiver) {
-            return res.json({ success: false, reason: 'RECEIVER_NOT_FOUND' });
+            return res.status(404).json({ 
+                success: false, 
+                error: 'Receiver not found' 
+            });
         }
 
-        // Check for duplicate
-        const duplicate = receiver.messages.some(msg => msg.messageId === messageId);
+        const exists = receiver.messages.some(msg => 
+            msg.messageId === messageId
+        );
 
-        if (duplicate) {
-            return res.json({ success: false, reason: 'DUPLICATE' });
+        if (exists) {
+            return res.json({ 
+                success: true, 
+                note: 'Duplicate message, skipped' 
+            });
         }
 
-        // Store message
         receiver.messages.push({
             messageId,
-            page: pageId,
-            pageName,
             content,
-            ttl, // Store TTL so receiver can continue gossiping
+            ttl,
+            pageName,
             timestamp: new Date(),
             receivedVia: 'GOSSIP'
         });
 
         await receiver.save();
 
-        console.log(`[DELIVERED] ${receiver.name} received ${messageId}`);
+        console.log(`[DELIVERED] ${receiver.name} received ${messageId.substring(0, 20)}... (TTL=${ttl})`);
 
         res.json({ success: true });
 
     } catch (error) {
-        console.error('Error delivering gossip:', error);
-        res.json({ success: false, reason: 'SERVER_ERROR' });
+        console.error('[GOSSIP SEND] Error:', error);
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
 
-/**
- * LEADER: Fetch from pages and store (initiates gossip)
- */
-router.post('/gossip/leader-fetch', requireLogin, async (req, res) => {
+// ============================================
+// 6. UPDATE LAST SEEN (HEARTBEAT) 
+// ============================================
+router.post('/update-last-seen', requireLogin, async (req, res) => {
     try {
+        if (!req.session?.user?._id) {
+            console.log('⚠️  No session user ID');
+            return res.status(401).json({ 
+                success: false, 
+                error: 'No valid session' 
+            });
+        }
+
         const userId = req.session.user._id;
-        const user = await User.findById(userId);
-
-        // Verify leader
-        if (!user.isLeader) {
-            return res.status(403).json({ success: false, error: 'Not leader' });
-        }
-
-        // Fetch from all pages
-        const pageUpdates = await apiFetcher.fetchAllPages();
-
-        // Store each update in leader's messages with full TTL
-        for (const update of pageUpdates) {
-            // Check if already have this message
-            const exists = user.messages.some(msg => msg.messageId === update.messageId);
-            
-            if (!exists) {
-                user.messages.push({
-                    messageId: update.messageId,
-                    page: update.pageId,
-                    pageName: update.pageName,
-                    content: update.content,
-                    ttl: 7, // Full TTL for fresh messages
-                    timestamp: new Date(),
-                    receivedVia: 'LEADER_FETCH'
-                });
-            }
-        }
-
-        await user.save();
-
-        console.log(`[LEADER] Fetched ${pageUpdates.length} page updates`);
-
-        res.json({
-            success: true,
-            messagesCount: pageUpdates.length
+        
+        await User.findByIdAndUpdate(userId, {
+            lastSeen: new Date()
         });
+        res.status(200).json({ success: true });  
 
     } catch (error) {
-        console.error('Leader fetch error:', error);
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ 
+            success: false, 
+            error: error.message 
+        });
     }
 });
-
+// ============================================
+// EXPORT ROUTER - MUST BE LAST LINE
+// ============================================
 module.exports = router;
