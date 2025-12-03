@@ -233,7 +233,7 @@ router.post('/gossip/send', requireLogin, async (req, res) => {
 // ============================================
 // 6. UPDATE LAST SEEN (HEARTBEAT) 
 // ============================================
-router.post('/update-last-seen', requireLogin, async (req, res) => {
+router.post('/check-last-seen', requireLogin, async (req, res) => {
     try {
         if (!req.session?.user?._id) {
             console.log('⚠️  No session user ID');

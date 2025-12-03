@@ -4,7 +4,7 @@
 
 const TTL = 7;
 const FANOUT = 2;
-const CHECK_INTERVAL_MS = 50000;
+const CHECK_INTERVAL_MS = 5000;
 const LEADER_FETCH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
 let processedMessages = new Set();
@@ -176,7 +176,7 @@ async function gossipToRandomPeers() {
 // ============================================
 async function updateLastSeen() {
     try {
-        await fetch('/update-last-seen', {
+        await fetch('/check-last-seen', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'same-origin' 
@@ -204,7 +204,7 @@ async function startGossipProtocol() {
     if (isLeader) {
         console.log('👑 LEADER MODE ACTIVATED');
         console.log('   Role: Fetch from external APIs');
-        console.log('   Interval: Every 2 hours\n');
+        console.log('   Interval: Every 1 hour\n');
         
         await leaderFetchFromPages();
         
