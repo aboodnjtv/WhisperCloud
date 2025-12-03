@@ -15,8 +15,16 @@ router.get("/admin-messages", requireLogin, async (req, res) => {
             return res.redirect("/login");
         }
 
-        // Filter messages that don't have a page reference (admin broadcasts)
-        const adminMessages = user.messages.filter(msg => !msg.page);
+        // Filter messages that DON'T have pageName (admin broadcasts)
+        // Also exclude gossip protocol messages
+        const adminMessages = user.messages.filter(msg => 
+            !msg.pageName && 
+            msg.receivedVia !== 'GOSSIP' && 
+            msg.receivedVia !== 'LEADER_FETCH'
+        );
+
+        // Sort by timestamp (newest first)
+        adminMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         res.render("./user/admin-messages", {
             title: "Admin Messages | WhisperCloud",
@@ -29,7 +37,7 @@ router.get("/admin-messages", requireLogin, async (req, res) => {
     }
 });
 
-// Route to display page messages (from subscribed pages)
+// Route to display page messages (from gossip protocol and API fetches)
 router.get("/page-messages", requireLogin, async (req, res) => {
     try {
         // Get the current user and populate page references
@@ -43,8 +51,14 @@ router.get("/page-messages", requireLogin, async (req, res) => {
             return res.redirect("/login");
         }
 
-        // Filter messages that have a page reference
-        const pageMessages = user.messages.filter(msg => msg.page);
+        // Filter messages that HAVE pageName (from gossip protocol)
+        // This includes messages from GOSSIP and LEADER_FETCH
+        const pageMessages = user.messages.filter(msg => 
+            msg.pageName || msg.page
+        );
+
+        // Sort by timestamp (newest first)
+        pageMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
         res.render("./user/page-messages", {
             title: "Page Messages | WhisperCloud",

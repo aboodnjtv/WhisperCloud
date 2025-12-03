@@ -13,9 +13,6 @@
     <p class="user-type-badge <%= user.type === 'admin' ? 'admin-badge' : 'peer-badge' %>">
       <%= user.type === 'admin' ? 'Administrator' : 'Peer Node' %>
     </p>
-    <form action="/peers" method="GET">
-      <button style="width: 300px; align-self: center; margin: 20px;">Show peers</button>
-    </form>
   </div>
 
   <!-- Stats Grid -->
@@ -45,60 +42,68 @@
     </div>
   </div>
 
-  <!-- Quick Actions Section -->
-  <div class="actions-section">
-    <h2>Quick Actions</h2>
+ <!-- Quick Actions Section -->
+<div class="actions-section">
+  <h2>Quick Actions</h2>
 
-    <div class="action-cards">
-      <!-- Admin Broadcasts -->
-      <a href="/admin-messages" class="action-card admin-card">
-        <div class="action-icon">📢</div>
-        <div class="action-content">
-          <h3>Admin Broadcasts</h3>
-          <p>View system-wide messages from administrators</p>
-          <%
-            const adminCount = user.messages ? user.messages.filter(msg => !msg.page).length : 0;
-          %>
-          <span class="badge"><%= adminCount %> messages</span>
-        </div>
-      </a>
+  <div class="action-cards">
+    <!-- Admin Broadcasts -->
+    <a href="/admin-messages" class="action-card admin-card">
+      <div class="action-icon">📢</div>
+      <div class="action-content">
+        <h3>Admin Broadcasts</h3>
+        <p>View system-wide messages from administrators</p>
+        <%
+          // Count messages WITHOUT pageName and NOT from gossip/leader fetch
+          const adminCount = user.messages ? user.messages.filter(msg => 
+            !msg.pageName && 
+            msg.receivedVia !== 'GOSSIP' && 
+            msg.receivedVia !== 'LEADER_FETCH'
+          ).length : 0;
+        %>
+        <span class="badge"><%= adminCount %> messages</span>
+      </div>
+    </a>
 
-      <!-- Page Messages -->
-      <a href="/page-messages" class="action-card page-card">
-        <div class="action-icon">📄</div>
-        <div class="action-content">
-          <h3>Page Messages</h3>
-          <p>Updates from your subscribed pages and APIs</p>
-          <%
-            const pageCount = user.messages ? user.messages.filter(msg => msg.page).length : 0;
-          %>
-          <span class="badge"><%= pageCount %> messages</span>
-        </div>
-      </a>
+    <!-- Page Messages -->
+    <a href="/page-messages" class="action-card page-card">
+      <div class="action-icon">📄</div>
+      <div class="action-content">
+        <h3>Page Messages</h3>
+        <p>Updates from your subscribed pages and APIs</p>
+        <%
+          // Count messages WITH pageName (from gossip) OR with page reference
+          const pageCount = user.messages ? user.messages.filter(msg => 
+            msg.pageName || msg.page
+          ).length : 0;
+        %>
+        <span class="badge"><%= pageCount %> messages</span>
+      </div>
+    </a>
 
-      <!-- Browse Pages -->
-      <a href="/pages" class="action-card pages-card">
-        <div class="action-icon">🔍</div>
-        <div class="action-content">
-          <h3>Browse Pages</h3>
-          <p>Discover and subscribe to new content sources</p>
-          <span class="badge">Explore</span>
-        </div>
-      </a>
+    <!-- Browse Pages -->
+    <a href="/pages" class="action-card pages-card">
+      <div class="action-icon">🔍</div>
+      <div class="action-content">
+        <h3>Browse Pages</h3>
+        <p>Discover and subscribe to new content sources</p>
+        <span class="badge">Explore</span>
+      </div>
+    </a>
 
-      <!-- Admin Panel (if admin) -->
-      <% if (user.type === 'admin') { %>
-      <a href="/admin/dashboard" class="action-card admin-panel-card">
-        <div class="action-icon">⚙</div>
-        <div class="action-content">
-          <h3>Admin Panel</h3>
-          <p>Manage users, pages, and broadcast messages</p>
-          <span class="badge">Admin Only</span>
-        </div>
-      </a>
-      <% } %>
-    </div>
+    <!-- Admin Panel (if admin) -->
+    <% if (user.type === 'admin') { %>
+    <a href="/admin/dashboard" class="action-card admin-panel-card">
+      <div class="action-icon">⚙</div>
+      <div class="action-content">
+        <h3>Admin Panel</h3>
+        <p>Manage users, pages, and broadcast messages</p>
+        <span class="badge">Admin Only</span>
+      </div>
+    </a>
+    <% } %>
   </div>
+</div>
 
   <!-- Logout Button -->
   <div class="logout-section">
