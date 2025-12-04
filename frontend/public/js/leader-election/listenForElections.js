@@ -36,11 +36,6 @@ if (window.user && window.user.type ==="peer") {
                             let senderId = msg.payload.senderId;
                             await send("OK",user._id,senderId);
                             // console.log("Sent ((OK)) to "+senderId)
-                            // // if no election is Running 
-                            // // start a new election
-                            // if(window.user.election_state === undefined){
-                            //     await start_leader_election();
-                            // }
                         }
                     }
                     else{
