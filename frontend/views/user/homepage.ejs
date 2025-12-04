@@ -28,7 +28,17 @@
     <div class="stat-card">
       <div class="stat-icon">💬</div>
       <div class="stat-info">
-        <h3><%= user.messages ? user.messages.length : 0 %></h3>
+        <%
+          let totalMessages = 0
+          if (user.broadcastMessages) {
+            totalMessages += user.broadcastMessages.length
+          }
+
+          if (user.messages) {
+            totalMessages += user.messages.length
+          }
+        %>
+        <h3><%= totalMessages %></h3>
         <p>Total Messages</p>
       </div>
     </div>
@@ -45,7 +55,6 @@
  <!-- Quick Actions Section -->
 <div class="actions-section">
   <h2>Quick Actions</h2>
-
   <div class="action-cards">
     <!-- Admin Broadcasts -->
     <a href="/admin-messages" class="action-card admin-card">

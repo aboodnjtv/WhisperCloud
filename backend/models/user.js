@@ -39,10 +39,7 @@ const userSchema = new mongoose.Schema({
   isLeader: { type: Boolean, default: false }, // global leader flag
   leaderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // the id of the admin
 
-
-
-
-   // Messages received from pages (latest per page)
+  // Messages received from pages (latest per page)
   messages: [
     {
       messageId: { type: String, required: true },
@@ -55,9 +52,17 @@ const userSchema = new mongoose.Schema({
     }
   ],
 
-  createdAt: { type: Date, default: Date.now }
-});
+  broadcastMessages: [
+    {
+      messageId: { type: String, required: true, unique: true},
+      content: { type: String, required: true },
+      timestamp: { type: Date, default: Date.now }
+    }
+  ],
 
+  createdAt: { type: Date, default: Date.now }
+
+});
 
 const User = mongoose.model("User",userSchema);
 module.exports = User;
