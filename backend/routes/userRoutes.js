@@ -3,8 +3,9 @@ const router = express.Router();
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const requireLogin = require("../middleware/requireLogin");
+const requireLogout = require("../middleware/requireLogout");
 
-router.get("/login",(req,res)=>{
+router.get("/login",requireLogout,(req,res)=>{
     res.render("./user/login",{
         title: "Login | WhisperCloud"
     });
@@ -56,7 +57,7 @@ router.post("/logout", (req, res) => {
     res.redirect("/login")
 })
 
-router.get("/signup",(req,res)=>{
+router.get("/signup",requireLogout,(req,res)=>{
     res.render("./user/signup",{
         title: "Sign Up | WhisperCloud"
     });
