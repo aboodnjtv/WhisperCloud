@@ -5,6 +5,8 @@ const path = require('path');
 const ejsMate = require("ejs-mate");
 const User = require("./models/user");
 const session = require("express-session") 
+const requireLogout = require("./middleware/requireLogout");
+
 
 require("./config/db");
 
@@ -41,7 +43,7 @@ app.use("/", pageRoutes);
 
 const port = process.env.PORT || 3000;
 
-app.get("/",(req,res)=>{
+app.get("/",requireLogout,(req,res)=>{
     res.render("./index");
 })
 app.get("/db", async (req, res) => {
