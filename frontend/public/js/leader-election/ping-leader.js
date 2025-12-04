@@ -1,23 +1,18 @@
 import {ping ,listen_for_ack} from "../utils/pingAck.js";
 import {start_leader_election} from "./bully_algorithm.js";
-import { check_messages } from "../utils/check_messages.js";
-import{update_leader} from "../utils/update_leader.js"
-import{send} from "../utils/send.js"
 const user = window.user;
 
 // window.user is the current user
 // Only run if a user session is active
-if (window.user) {
+if (window.user && window.user.type ==="peer") {
 
-
-  // only matters if you are the leader 
+  // only matters if current user was/still the leader 
   // Detect actual login vs refresh
   let justLoggedIn = !sessionStorage.getItem("alreadyLoaded"); //initially, justLoggedIn = ture
-  console.log("--------------")
-  console.log("--------------")
-  console.log("--------------")
-  console.log("justLoggedIn: "+justLoggedIn)
-  console.log(user)
+  
+  if(user.leaderId === user._id){
+    console.log("Leader Just LoggedIn: Starting Election ")
+  }
   // Mark that the page has been loaded once
   sessionStorage.setItem("alreadyLoaded", "true"); // on logout, it be cleared 
 
@@ -29,10 +24,11 @@ if (window.user) {
   let lastPingTime = Date.now();
 
   // function to ensure peer knows who the leader is
-  const check_leader_existence = () => {
+  const check_leader_existence = async() => {
     if (!user.leaderId) {
       console.warn("No leader assigned to this peer yet.");
-      // start election
+      // if it does not know any leader, start election
+      await start_leader_election();
       setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep checking later
       return false;
     }
@@ -44,17 +40,12 @@ if (window.user) {
     if (user.leaderId === user._id) {
       console.warn("You are the Leader.");
 
-      // if you have just logged in 
+      // if you (leader) have just logged in 
       // start a new election
       if (justLoggedIn) {
         console.log("Just logged in as leader → starting election");
         await start_leader_election();
         }
-
-      // check for any election
-      // const election_messages = await check_messages("ELECTION",user._id);
-      // console.log("LEADER ELECTION messages")
-      // console.log(election_messages.messages)
 
       setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep checking later
       return false;
@@ -93,51 +84,19 @@ if (window.user) {
           waitingForReply = false; // reset to try again or trigger election
 
 
-          const delay = 5000 + Math.floor(Math.random() * 18000); // 3–20 seconds
+          const delay = 5000 + Math.floor(Math.random() * 5000);
           // const delay = 3000 + Math.floor(Math.random() * 3000); // 3-6 seconds
           await new Promise(resolve => setTimeout(resolve, delay));
 
           console.log("Starting election");
-          
-          // Check if someone else already started or won the election
-          const coordinator_messages = await check_messages("COORDINATOR",user._id);
-          const election_messages = await check_messages("ELECTION",user._id);
-          
-          // coordinator_messages
-          if (coordinator_messages && coordinator_messages.messages.length > 0) {
-            console.log("GOT coordinator_messages");
-            console.log(coordinator_messages);
-            const new_leader_id = coordinator_messages.messages[0].payload.new_leader_id;
-            window.user.election_state = undefined; // leader election is done 
-            await update_leader(user._id,new_leader_id)
-            return setTimeout(checkLeader, CHECK_INTERVAL_MS); // keep monitoring
-          }else{
-            console.log("no COORDINATOR messages")
-          }
-
-          // election_messages
-          if (election_messages && election_messages.messages.length > 0) {
-            console.log("GOT election_messages");
-            console.log(election_messages.messages);
-            // const senderId = coordinator_messages.messages[0].payload.senderId;
-            //send OK the the senderId
-            for(let msg of election_messages.messages){
-              let senderId = msg.payload.senderId;
-              await send("OK",user._id,senderId);
-              console.log("Sent ((OK)) to "+senderId)
-              window.user.election_state = "WAIT"; // so if later got another ELECTION, it will respond to it.
-            }
-            // start your leader election 
+          if(window.user.election_state !== "ELECTION_RUNNING" ||
+                        window.user.election_state !== "WAIT_OK"||
+                        window.user.election_state !== "WAIT_COORDINATOR"
+            ){
+            // start the election
             await start_leader_election();
-            return setTimeout(checkLeader, 1000);
-
-          }else{
-            console.log("no ELECTION messages")
           }
-
-          // no COORDINATOR / ELECTION messages
-          // start the election
-          await start_leader_election();
+          
           return setTimeout(checkLeader, 1000);
 
         }
