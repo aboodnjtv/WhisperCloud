@@ -6,6 +6,7 @@ import {getAdmins, getPeers} from "./utils/fetchUsers.js";
  */
 window.addEventListener("DOMContentLoaded", () => {
     if(window.user && user.type === "admin") {
+        console.log("Listening for messages from a system administrator...")
         listenForPing()
     }
     const form = document.getElementById("broadcastForm")
@@ -188,7 +189,7 @@ async function calculateRange(adminMessage, receiverID) {
  * @returns {{ok: boolean}} - True if all the messages were disseminated to the peers succesfully, false otherwise
  */
 async function pushMessage(startIndex, endIndex, content, currentPeers) {
-    console.log(`[ADMIN EXECUTION] Admin ID ${user._id} is sending the message "${content}" to Peers ${startIndex} through ${endIndex}. Total peers: ${endIndex - startIndex + 1}.`);
+    console.log(`Message delivery to peers underway: Admin ${user._id} is sending the message "${content}" from peers ${startIndex} to ${endIndex}. Total peers: ${endIndex - startIndex + 1}.`);
     var isDelivered = true
 
     for (let j = startIndex; j <= endIndex; j++) {
@@ -262,7 +263,10 @@ async function checkForAck(senderID, receiverID) {
     for (let retry = 0; retry < MAX_RETRIES; retry++) {
         try {
             const res = await listen_for_ack(receiverID, senderID)
-            if (res) return true
+            if (res) {
+                console.log(`Success! ACK message was received from ${receiverID}`)
+                return true
+            }
         } catch (error) {
             console.error(`ACK message was not received from ${receiverID}.`, error)
         }
