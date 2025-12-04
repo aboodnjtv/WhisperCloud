@@ -47,8 +47,11 @@ const userSchema = new mongoose.Schema({
     {
       messageId: { type: String, required: true },
       page: { type: mongoose.Schema.Types.ObjectId, ref: 'Page' },
+      pageName: { type: String },
       content: { type: String, required: true },
-      timestamp: { type: Date, default: Date.now }
+      ttl: { type: Number, default: 7 },
+      timestamp: { type: Date, default: Date.now },
+      receivedVia: { type: String, enum: ['LEADER_FETCH', 'GOSSIP', 'BROADCAST'], default: 'GOSSIP' }
     }
   ],
 

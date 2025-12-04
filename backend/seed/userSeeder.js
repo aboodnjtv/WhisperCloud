@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: require('path').join(__dirname, '../.env') });
 const User = require("../models/user");
 require("../config/db");
 const bcrypt = require("bcrypt");
@@ -56,6 +56,14 @@ const seedUsers = async () => {
         user.isLeader = true;
       }
       await user.save();
+    }
+
+    // --- Connect all peers to each other ---
+    for (const peer of peerUsers) {
+      peer.peers = peerUsers
+        .filter(p => !p._id.equals(peer._id))
+        .map(p => p._id);
+      await peer.save();
     }
 
     console.log(`Assigned leader: ${randomLeader.name}`);
