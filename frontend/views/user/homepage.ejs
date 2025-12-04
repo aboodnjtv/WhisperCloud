@@ -64,11 +64,7 @@
         <p>View system-wide messages from administrators</p>
         <%
           // Count messages WITHOUT pageName and NOT from gossip/leader fetch
-          const adminCount = user.messages ? user.messages.filter(msg => 
-            !msg.pageName && 
-            msg.receivedVia !== 'GOSSIP' && 
-            msg.receivedVia !== 'LEADER_FETCH'
-          ).length : 0;
+          const adminCount = user.broadcastMessages ? user.broadcastMessages.length : 0;
         %>
         <span class="badge"><%= adminCount %> messages</span>
       </div>
