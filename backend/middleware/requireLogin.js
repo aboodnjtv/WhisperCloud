@@ -1,10 +1,7 @@
 module.exports = (req, res, next) => { 
-    if (!req.session) {
-        return res.status(401).json({ error: "No session" });
+    if (!req.session || !req.session.user) {
+        return res.redirect("/login");
     }
     
-    if (!req.session.user) {
-        return res.status(401).json({ error: "Not authenticated" });
-    }
     next();
 };
