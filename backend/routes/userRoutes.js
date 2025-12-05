@@ -119,5 +119,60 @@ router.post("/update_leader", requireLogin, async (req, res) => {
   }
 });
 
+/**
+ * Retrieves admins from the database
+ */
+router.get("/retrieve-admins", requireLogin, async (req, res) => {
+    try {
+        const admins = await User.find({ type: "admin" })
+        if (admins.length === 0) return res.status(404).json({ error: "Admins were not found in the database." })
+
+        return res.status(200).json(admins)
+    } catch (error) {
+        return res.status(500).json({ success: false, error: "Admin retrieval was unsuccessful." })
+    }
+})
+
+/**
+ * Retrieves peers from the database
+ */
+router.get("/retrieve-peers", requireLogin, async (req, res) => {
+    try {
+        const peers = await User.find({ type: "peer" })
+        if (peers.length === 0) return res.status(404).json({ error: "Peers were not found in the database." })
+
+        return res.status(200).json(peers)
+    } catch (error) {
+        return res.status(500).json({ success: false, error: "Peer retrieval was unsuccessful." })
+    }
+})
+
+/**
+ * Pushes broadcast message to a peer's local array
+ */
+router.post("/push-message", requireLogin, async (req, res) => {
+    try {
+        const { peerID, content, messageID } = req.body;
+
+        const message = {
+            messageId: messageID,
+            content: content,
+            timestamp: new Date()
+        }
+
+        const curPeer = await User.findByIdAndUpdate(
+            peerID,
+            { $push: {
+                broadcastMessages: message
+            }}
+        )
+
+        if (!curPeer) return res.status(404).json({ error: "Peer update failed" })
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        return res.status(500).json({ success: false, error: "Server error" });
+    }
+});
 
 module.exports = router;

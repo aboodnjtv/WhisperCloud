@@ -60,7 +60,7 @@ if (window.user && window.user.type ==="peer") {
 
       // if user is not waiting for reply, Ping leader
       if(!waitingForReply){
-        await ping(user._id,user.leaderId);
+        // await ping(user._id,user.leaderId);
         waitingForReply = true;
         // we start measuring form here
         lastPingTime = Date.now();
@@ -80,7 +80,6 @@ if (window.user && window.user.type ==="peer") {
         // declare leader has failed 
         // start the election
         else if (Date.now() - lastPingTime > STALE_THRESHOLD_MS) {
-          console.log("❌ Leader has FAILED -> start election");
           waitingForReply = false; // reset to try again or trigger election
 
 

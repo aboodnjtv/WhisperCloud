@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+const mongoose = require("mongoose")
+const { Schema } = mongoose
 
 // Message model simulates inter-node communication in the distributed system.
 // Each document represents a single message passed between peers.
@@ -27,7 +28,7 @@ const messageSchema = new mongoose.Schema({
   // Optional payload — stores any custom data the message carries
   // (e.g., election info, gossip content, coordinator notice, etc.)
   payload: {
-    type: Object,
+    type: Schema.Types.Mixed,
     default: {},
   },
 

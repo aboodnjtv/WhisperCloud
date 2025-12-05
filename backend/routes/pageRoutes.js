@@ -4,8 +4,9 @@ const User = require("../models/user");
 const Page = require("../models/page");
 const requireLogin = require("../middleware/requireLogin");
 
-
-// Route to display admin broadcast messages
+/**
+ * Route to display admin broadcast messages
+ */
 router.get("/admin-messages", requireLogin, async (req, res) => {
     try {
         // Get the current user with full data
@@ -14,6 +15,7 @@ router.get("/admin-messages", requireLogin, async (req, res) => {
         if (!user) {
             return res.redirect("/login");
         }
+
 
         // Filter messages that DON'T have pageName (admin broadcasts)
         // Also exclude gossip protocol messages
@@ -26,10 +28,14 @@ router.get("/admin-messages", requireLogin, async (req, res) => {
         // Sort by timestamp (newest first)
         adminMessages.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+        // Filter messages that don't have a page reference (admin broadcasts)
+        const bCastMessages = user.broadcastMessages
+
+
         res.render("./user/admin-messages", {
             title: "Admin Messages | WhisperCloud",
             user: user,
-            adminMessages: adminMessages
+            adminMessages: bCastMessages
         });
     } catch (error) {
         console.log("Error fetching admin messages:", error);
@@ -122,6 +128,26 @@ router.post("/unsubscribe/:pageId", requireLogin, async (req, res) => {
     } catch (error) {
         console.log("Error unsubscribing from page:", error);
         res.redirect("/pages");
+    }
+});
+
+/**
+ * Route to view admin panel page
+ */
+router.get("/admin/dashboard", requireLogin, async (req, res) => {
+    try {
+        const user = await User.findById(req.session.user._id)
+        if (!user) {
+            return res.redirect("/login");
+        }
+
+        res.render("./admin/dashboard", {
+            title: "Admin Panel | WhisperCloud",
+            user: user
+        });
+    } catch (error) {
+        console.log("Error loading admin panel page:", error);
+        res.redirect("/homepage");
     }
 });
 

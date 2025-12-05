@@ -29,8 +29,17 @@ router.post("/send", requireLogin, async (req, res) => {
 // a route to listen for any messages
 router.post("/listen", requireLogin, async (req, res) => {
   try {
-    const {type,senderId,receiverId} = req.body;
-    const filter = { type };
+    const {types,senderId,receiverId} = req.body;
+    const filter = { };
+
+    if (types) {
+      if (Array.isArray(types)) {
+        filter.type = { $in: types } // If types is an array, use the $in operator
+      } else {
+        filter.type = types // If types is a single string 
+      }
+    }
+
     if (senderId) filter.senderId = senderId;
     if (receiverId) filter.receiverId = receiverId;
 

@@ -17,7 +17,7 @@
         console.log(`Pinged: ${receiverId}`)
     }
     catch(error){
-        console.log("Error Ping, "+error);
+        console.log("Error Ping, ", error);
     }
   }
 
@@ -33,7 +33,6 @@
           }),
         });
         const data = await ack_response.json();
-        // if the messages is 0 then there are no ack found 
-        return data.messages.length !== 0;
 
+        return data.messages.length !== 0;
   }
