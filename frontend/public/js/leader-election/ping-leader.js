@@ -83,8 +83,7 @@ if (window.user && window.user.type ==="peer") {
           waitingForReply = false; // reset to try again or trigger election
 
 
-          const delay = 5000 + Math.floor(Math.random() * 5000);
-          // const delay = 3000 + Math.floor(Math.random() * 3000); // 3-6 seconds
+          const delay = 5000 + Math.floor(Math.random()*5000);
           await new Promise(resolve => setTimeout(resolve, delay));
 
           console.log("Starting election");
