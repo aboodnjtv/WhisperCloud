@@ -35,10 +35,12 @@ app.use((req, res, next) => {
 const userRoutes = require("./routes/userRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const pageRoutes = require("./routes/pageRoutes");
+const gossipRoutes = require('./routes/gossipRoutes');
 
 app.use("/", userRoutes);
 app.use("/", messageRoutes);
 app.use("/", pageRoutes);
+app.use('/', gossipRoutes);
 
 
 const port = process.env.PORT || 3000;
